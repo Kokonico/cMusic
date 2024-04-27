@@ -1,0 +1,19 @@
+[tool.poetry]
+name = "cmusic"
+version = "1.0.0"
+description = ""
+authors = ["Kokonico <kokonico@duck.com>"]
+readme = "README.md"
+scripts = {"cmusic" = "cmusic.cmusic:main"}
+
+[tool.poetry.dependencies]
+python = "^3.12"
+objlog = "^2.1.1"
+pygame = "^2.5.2"
+tinytag = "^1.10.1"
+mutagen = "^1.47.0"
+inquirer = "^3.2.4"
+
+[build-system]
+requires = ["poetry-core"]
+build-backend = "poetry.core.masonry.api"

@@ -51,7 +51,7 @@ cmusic play <Song1> <Song2> <Song3> ...
 The player will display the current Song playing, the progress of the Song and the controls.
 ```
 NOW PLAYING: Altars of Apostasy by Heaven Pierce Her (Ultrakill: Imperfect Hatred (Original Game Soundtrack))
-─────────⬤️────────────────────
+─────────█────────────────────
 << || >> 01:44 / 05:37 ────○ 🔊 100% 🔁
 ```
 

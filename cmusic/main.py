@@ -4,8 +4,7 @@ __version__ = "1.0.0"
 extra = "Alpha Somewhat Messy™️edition (almost done doing: remove dumpster fire from code)"
 
 import os
-import multiprocessing
-import queue
+import subprocess
 # local package imports
 from . import indexlib
 from . import bg_threads
@@ -21,8 +20,21 @@ import inquirer
 import pygame
 from tinytag import TinyTag
 
+
 def main(args: dict):
     """Main function for cMusic."""
+
+    if args["background"] and not args["_background_process"]:
+        # tmux time
+        args["_background_process"] = True
+        subprocess.run(["tmux", "new", "-d", "-s", "cmusic_background", "cmusic", "play", *args["args"]],
+                       stderr=subprocess.PIPE)
+        # run the background process
+        subprocess.run(["tmux", "send-keys", "-t", "cmusic_background", "python cmusic/main.py", "C-m"],
+                       stderr=subprocess.PIPE)
+        # Detach from the tmux session
+        subprocess.run(["tmux", "detach", "-s", "cmusic_background"], stderr=subprocess.PIPE)
+        return
 
     if args["reformat"]:
         # reformat the library
@@ -54,7 +66,7 @@ def main(args: dict):
             try:
                 while True:
                     for song in songs:
-                        play(song[1], song, args["loop"], args["shuffle"])
+                        play(song[1], song, args["loop"], args["shuffle"], config)
                     if not args["loop"]:
                         break
             except KeyboardInterrupt:  # catch the KeyboardInterrupt so the program can exit
@@ -80,6 +92,36 @@ def main(args: dict):
             songs = indexlib.search_index(config["library"], args["args"][0])
             for song in songs:
                 print(f"{song[2]} by {song[3]} {f'({song[4]})' if song[4] not in [None, 'None'] else ''}")
+
+        case "c":
+            pull_session("cmusic_background")
+
+        case "p":
+            # toggle the background process
+            # check if the background process is running
+            tmux_check = subprocess.run(["tmux", "has-session", "-t", "cmusic_background"], stdout=subprocess.PIPE)
+            if tmux_check.returncode == 0:
+                # session exists, send space to the session
+                subprocess.run(["tmux", "send-keys", "-t", "cmusic_background", " ", "C-m"])
+
+        case "v":
+            # set the volume, will automatically save to the config file (and apply to the background process)
+            try:
+                volume = int(args["args"][0])
+                if volume > 100:
+                    volume = 100
+                elif volume < 0:
+                    volume = 0
+                with open(CONFIG_FILE, "w") as f:
+                    config["volume"] = volume
+                    f.write(json.dumps(config, indent=4))
+            except ValueError:
+                MAIN.log(Warn("Volume must be an integer."))
+                print("Volume must be an integer.")
+
+        case "q":
+            # quit the background process
+            subprocess.run(["tmux", "kill-session", "-t", "cmusic_background"])
 
 
 def scan_library(songname):
@@ -148,13 +190,13 @@ def draw_interface(tags, song_data, looped, shuffle):
     percentage = elapsed / duration
     # print progress bar
     # like the following:
-    # ──────────────────────⬤️──────
-    # length of bar is 30 characters with a ⬤️ at the percentage
+    # ──────────────────────█──────
+    # length of bar is 30 characters with a █ at the percentage
     bar_length = 30
     bar = "─" * bar_length
     bar = list(bar)
     try:
-        bar[int(bar_length * percentage)] = "⬤️"
+        bar[int(bar_length * percentage)] = "█"
     except IndexError:
         # song is done
         return
@@ -205,9 +247,13 @@ def draw_interface(tags, song_data, looped, shuffle):
     return "\033c" + new_state
 
 
-def play(song_path, song_data, looped, shuffle):
+def play(song_path, song_data, looped, shuffle, config):  # will error if config is not passed, idk why
     """play a song."""
     # get the song path
+    if 'TMUX' in os.environ:
+        bg = True
+    else:
+        bg = False
     last_printed_state = None
     if song_path is None:
         MAIN.log(FileNotFoundError(f"Could not find song '{song_data[1]}' in library."))
@@ -219,7 +265,7 @@ def play(song_path, song_data, looped, shuffle):
     pygame.mixer.music.load(song_path)
     pygame.mixer.music.set_volume(config["volume"] / 100)
     pygame.mixer.music.play()
-    key_thread = bg_threads.KeyHandler()
+    key_thread = bg_threads.KeyHandler(bg)
     try:
         # start the key press listener
         key_thread.start()
@@ -230,6 +276,10 @@ def play(song_path, song_data, looped, shuffle):
             if interface_frame != last_printed_state:
                 print(interface_frame)
                 last_printed_state = interface_frame
+            # check config for volume changes
+            with open(CONFIG_FILE) as f:
+                config = json.load(f)
+                pygame.mixer.music.set_volume(config["volume"] / 100)
             pygame.time.delay(100)
 
         # song is done
@@ -243,3 +293,12 @@ def play(song_path, song_data, looped, shuffle):
             key_thread.stop()
             key_thread.join()
         raise KeyboardInterrupt("User shutdown Program")  # re-raise the KeyboardInterrupt so the program can exit
+
+
+def pull_session(session_name):
+    """Pull a tmux session to the foreground."""
+    # figure out the current setting for status bar
+    status = subprocess.run(["tmux", "show", "-g", "status"], stdout=subprocess.PIPE).stdout.decode("utf-8").strip().split(" ")[-1]
+    subprocess.run(["tmux", "set", "-g", "status", "off"])
+    subprocess.run(["tmux", "attach", "-t", session_name])
+    subprocess.run(["tmux", "set", "-g", "status", f"{status}"])

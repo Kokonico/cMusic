@@ -8,6 +8,7 @@ import termios
 import select
 import threading
 import pygame
+import subprocess
 
 from .constants import config, CONFIG_FILE, MAIN
 
@@ -15,9 +16,10 @@ from objlog.LogMessages import Info, Error
 
 class KeyHandler(threading.Thread):
     """Handles key presses for cmusic in the background."""
-    def __init__(self):
+    def __init__(self, is_bg: bool = False):
         super(KeyHandler, self).__init__()
         self.stop_flag = threading.Event()
+        self.is_bg = is_bg
 
     def run(self):
         old_settings = termios.tcgetattr(sys.stdin)
@@ -42,9 +44,14 @@ class KeyHandler(threading.Thread):
                                 pygame.mixer.music.pause()
                             else:
                                 pygame.mixer.music.unpause()
-                        case "q":
-                            pygame.mixer.music.stop()
-                            raise KeyboardInterrupt("User shutdown Program")
+                        case "e":
+                            with open("debug.txt", "a") as f:
+                                f.write("e")
+                            if self.is_bg:
+                                with open("debug.txt", "a") as f:
+                                    f.write("e 2")
+                                # detach tmux session (this process is within it)
+                                subprocess.run(["tmux", "detach", "-s", "cmusic_background"])
         except Exception as e:
             if self.stop_flag.is_set():
                 return

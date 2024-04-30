@@ -1,7 +1,7 @@
 """main internals for cmusic"""
 
 __version__ = "1.0.0"
-extra = "Alpha Somewhat Messy™️edition (almost done doing: remove dumpster fire from code)"
+extra = "Alpha"
 
 import os
 import subprocess
@@ -121,7 +121,42 @@ def main(args: dict):
 
         case "q":
             # quit the background process
-            subprocess.run(["tmux", "kill-session", "-t", "cmusic_background"])
+            status = subprocess.run(["tmux", "kill-session", "-t", "cmusic_background"], stderr=subprocess.PIPE)
+            if status.returncode != 0:
+                MAIN.log(Warn("Background process not found."))
+                print("Background process not found.")
+
+        case "edit":
+            # edit the song's tags
+            song = scan_library(args["args"][0])
+            if song is None:
+                MAIN.log(Warn(f"Could not find song '{args['args'][0]}' in library."))
+                print(f"Could not find song '{args['args'][0]}' in library.")
+                return
+            if isinstance(song, list):
+                for s in song:
+                    indexlib.edit_tags(s[0])
+            else:
+                indexlib.edit_tags(song[0])
+
+        case "info":
+            # get the info of a song
+            song = scan_library(args["args"][0])
+            if song is None:
+                MAIN.log(Warn(f"Could not find song '{args['args'][0]}' in library."))
+                print(f"Could not find song '{args['args'][0]}' in library.")
+                return
+            if isinstance(song, list):
+                print("-" * 30)
+                for s in song:
+                    print(f"Title: {s[2]}\nArtist: {s[3]}\nAlbum: {s[4]}\nGenre: {s[6]}\nYear: {s[7]}")
+                    print("-" * 30)
+            else:
+                print("-" * 30)
+                print(f"Title: {song[2]}\nArtist: {song[3]}\nAlbum: {song[4]}\nGenre: {song[6]}\nYear: {song[7]}")
+                print("-" * 30)
+
+
 
 
 def scan_library(songname):
@@ -277,9 +312,13 @@ def play(song_path, song_data, looped, shuffle, config):  # will error if config
                 print(interface_frame)
                 last_printed_state = interface_frame
             # check config for volume changes
-            with open(CONFIG_FILE) as f:
-                config = json.load(f)
-                pygame.mixer.music.set_volume(config["volume"] / 100)
+            try:
+                with open(CONFIG_FILE) as f:
+                    config = json.load(f)
+                    pygame.mixer.music.set_volume(config["volume"] / 100)
+            except json.JSONDecodeError:
+                MAIN.log(Warn("Unable to read config file, this may be due to changing the volume while the song is "
+                              "playing, ignoring."))
             pygame.time.delay(100)
 
         # song is done
@@ -299,6 +338,6 @@ def pull_session(session_name):
     """Pull a tmux session to the foreground."""
     # figure out the current setting for status bar
     status = subprocess.run(["tmux", "show", "-g", "status"], stdout=subprocess.PIPE).stdout.decode("utf-8").strip().split(" ")[-1]
-    subprocess.run(["tmux", "set", "-g", "status", "off"])
-    subprocess.run(["tmux", "attach", "-t", session_name])
-    subprocess.run(["tmux", "set", "-g", "status", f"{status}"])
+    subprocess.run(["tmux", "set", "-g", "status", "off"], stderr=subprocess.PIPE)
+    subprocess.run(["tmux", "attach", "-t", session_name], stderr=subprocess.PIPE)
+    subprocess.run(["tmux", "set", "-g", "status", f"{status}"], stderr=subprocess.PIPE)

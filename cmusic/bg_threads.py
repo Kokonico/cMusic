@@ -45,13 +45,8 @@ class KeyHandler(threading.Thread):
                             else:
                                 pygame.mixer.music.unpause()
                         case "e":
-                            with open("debug.txt", "a") as f:
-                                f.write("e")
-                            if self.is_bg:
-                                with open("debug.txt", "a") as f:
-                                    f.write("e 2")
-                                # detach tmux session (this process is within it)
-                                subprocess.run(["tmux", "detach", "-s", "cmusic_background"])
+                            # detach tmux session (this process is within it)
+                            subprocess.run(["tmux", "detach", "-s", "cmusic_background"], stderr=subprocess.PIPE)
         except Exception as e:
             if self.stop_flag.is_set():
                 return

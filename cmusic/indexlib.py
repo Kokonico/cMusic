@@ -9,6 +9,8 @@ import mutagen
 import mutagen.id3
 from tinytag import TinyTag
 
+import inquirer
+
 from .constants import config
 
 import objlog
@@ -78,8 +80,8 @@ def search_index(library_file: str, search_term: str):
     """search the index for a song"""
     conn = sqlite3.connect(os.path.join(library_file, 'index.db'))
     c = conn.cursor()
-    c.execute('SELECT * FROM songs WHERE title LIKE ? OR artist LIKE ? OR album LIKE ?',
-              ('%' + search_term + '%', '%' + search_term + '%', '%' + search_term + '%'))
+    c.execute('SELECT * FROM songs WHERE title LIKE ? OR artist LIKE ? OR album LIKE ? OR genre LIKE ? OR year LIKE ?',
+              ('%' + search_term + '%', '%' + search_term + '%', '%' + search_term + '%' , '%' + search_term + '%', '%' + search_term + '%'))
     return c.fetchall()
 
 
@@ -92,16 +94,50 @@ def index(song_file):
         log.log(Warn("Non mp3 files have not been tested, here be dragons."))
         print("Non mp3 files have not been tested, here be dragons.")
     # get the song name
-    song_name = input(f"Enter the name of the song '{song_file}' (leave blank for metadata name): ")
-    artist = input(f"Enter the artist of the song '{song_file}' (leave blank for metadata artist): ")
-    album = input(f"Enter the album of the song '{song_file}' (leave blank for metadata album): ")
     tags = TinyTag.get(song_file)
-    if song_name == "":
-        song_name = tags.title if tags.title is not None else os.path.basename(song_file)
-    if artist == "":
-        artist = tags.artist if tags.artist is not None else "Unknown"
-    if album == "":
-        album = tags.album if tags.album is not 'None' else None
+    song_name = tags.title
+    artist = tags.artist
+    album = tags.album
+    year = tags.year
+    genre = tags.genre
+    inquirer_questions = [
+        inquirer.List("what_to_edit", message="What field would you like to edit?", choices=[f"Song Name ({song_name})", f"Artist ({artist})", f"Album ({album})", f"Year ({year})", f"Genre ({genre})", f"Stop Editing", "Cancel"]),
+        ]
+    stop = False
+    while not stop:
+        what_to_edit = inquirer.prompt(inquirer_questions)["what_to_edit"]
+        if what_to_edit == f"Song Name ({song_name})":
+            song_name = input(f"Enter the song name (leave blank to keep '{tags.title}'): ")
+            if song_name == "":
+                song_name = tags.title
+        elif what_to_edit == f"Artist ({artist})":
+            artist = input(f"Enter the artist (leave blank to keep '{tags.artist}'): ")
+            if artist == "":
+                artist = tags.artist
+        elif what_to_edit == f"Album ({album})":
+            album = input(f"Enter the album (leave blank to keep '{tags.album}'): ")
+            if album == "":
+                album = tags.album
+        elif what_to_edit == f"Year ({year})":
+            year = input(f"Enter the year (leave blank to keep '{tags.year}'): ")
+            if year == "":
+                year = tags.year
+        elif what_to_edit == f"Genre ({genre})":
+            genre = input(f"Enter the genre (leave blank to keep '{tags.genre}'): ")
+            if genre == "":
+                genre = tags.genre
+        elif what_to_edit == "Stop Editing":
+            stop = True
+        elif what_to_edit == "Cancel":
+            log.log(Info("User cancelled song editing."))
+            print("Not indexing song.")
+            return
+        # update the questions
+        inquirer_questions = [
+            inquirer.List("what_to_edit", message="What field would you like to edit?",
+                          choices=[f"Song Name ({song_name})", f"Artist ({artist})", f"Album ({album})",
+                                   f"Year ({year})", f"Genre ({genre})", f"Stop Editing"]),
+        ]
     # copy the file to the library
     log.log(Info(f"Copying '{song_file}' to library..."))
     with open(song_file, "rb") as f:
@@ -122,6 +158,10 @@ def index(song_file):
     muta["TPE1"] = mutagen.id3.TPE1(encoding=3, text=[u"{}".format(artist)])
     muta["TALB"] = mutagen.id3.TALB(encoding=3, text=[u"{}".format(album)])
     muta["TIT2"] = mutagen.id3.TIT2(encoding=3, text=[u"{}".format(song_name)])
+    muta["TDRC"] = mutagen.id3.TDRC(encoding=3, text=[u"{}".format(tags.year)])
+    muta["TCON"] = mutagen.id3.TCON(encoding=3, text=[u"{}".format(tags.genre)])
+
+    log.log(Debug(f"Values: {artist}, {album}, {song_name}, {year}, {genre}"))
 
     muta.save()
 
@@ -163,6 +203,10 @@ def reformat():
         muta["TPE1"] = mutagen.id3.TPE1(encoding=3, text=[u"{}".format(song[3])])
         # set album
         muta["TALB"] = mutagen.id3.TALB(encoding=3, text=[u"{}".format(song[4])])
+        # set year
+        muta["TDRC"] = mutagen.id3.TDRC(encoding=3, text=[u"{}".format(song[7])])
+        # set genre
+        muta["TCON"] = mutagen.id3.TCON(encoding=3, text=[u"{}".format(song[6])])
         muta.save()
         log.log(Info(f"File '{song[2]}' reformatted."))
         # update the index (song paths)
@@ -190,6 +234,73 @@ def cleanup():
             log.log(Warn(f"File '{song[2]}' not found, removing from index."))
             c.execute('DELETE FROM songs WHERE id = ?', (song[0],))
 
+    # remove any files that are not in the index
+    for root, _, files in os.walk(config["library"]):
+        for file in files:
+            if file.endswith(".mp3"):
+                path = os.path.join(root, file)
+                c.execute('SELECT * FROM songs WHERE path = ?', (path,))
+                if c.fetchone() is None:
+                    log.log(Warn(f"File '{path}' not in index, removing."))
+                    os.remove(path)
+            elif not file.endswith(".db"):
+                log.log(Warn(f"File '{file}' not an mp3 or database file, removing."))
+                os.remove(os.path.join(root, file))
+
     conn.commit()
     conn.close()
     log.log(Info("Library cleaned up."))
+
+def edit_tags(id: int):
+    """edit the tags of a song"""
+    conn = sqlite3.connect(os.path.join(config["library"], 'index.db'))
+    c = conn.cursor()
+    c.execute('SELECT * FROM songs WHERE id = ?', (id,))
+    song = c.fetchone()
+    new_title, new_artist, new_album, new_year, new_genre = song[2], song[3], song[4], song[7], song[6]  # get the current values
+    if song is None:
+        log.log(Warn(f"Song with id '{id}' not found."))
+        print("Song not found.")
+        return
+    print(f"Editing song '{song[2]}'")
+    print("Leave blank to keep the current value.")
+    stop = False
+    inquirer_edit_options = [
+        inquirer.List("edit_option", message="What would you like to edit?", choices=["Title", "Artist", "Album", "Year", "Genre", "Stop Editing"])
+    ]
+    while not stop:
+        edit_option = inquirer.prompt(inquirer_edit_options)["edit_option"]
+        if edit_option == "Title":
+            new_title = input(f"Enter the new title for '{song[2]}' (leave blank to keep '{song[2]}'): ")
+            if new_title == "":
+                new_title = song[2]
+        elif edit_option == "Artist":
+            new_artist = input(f"Enter the new artist for '{song[2]}' (leave blank to keep '{song[3]}'): ")
+            if new_artist == "":
+                new_artist = song[3]
+        elif edit_option == "Album":
+            new_album = input(f"Enter the new album for '{song[2]}' (leave blank to keep '{song[4]}'): ")
+            if new_album == "":
+                new_album = song[4]
+        elif edit_option == "Year":
+            new_year = input(f"Enter the new year for '{song[2]}' (leave blank to keep '{song[7]}'): ")
+            if new_year == "":
+                new_year = song[7]
+        elif edit_option == "Genre":
+            new_genre = input(f"Enter the new genre for '{song[2]}' (leave blank to keep '{song[6]}'): ")
+            if new_genre == "":
+                new_genre = song[6]
+        elif edit_option == "Stop Editing":
+            stop = True
+    log.log(Debug(f"New values: {new_title}, {new_artist}, {new_album}, {new_year}, {new_genre}"))
+    # update the index
+    c.execute("""
+    UPDATE songs
+    SET title = ?, artist = ?, album = ?, year = ?, genre = ?
+    WHERE id = ?
+    """, (new_title, new_artist, new_album, new_year, new_genre, id))
+    conn.commit()
+    conn.close()
+    log.log(Info(f"Song '{song[2]}' edited."))
+    print(f"Song '{song[2]}' edited.")
+    reformat()  # reformat the library to apply changes

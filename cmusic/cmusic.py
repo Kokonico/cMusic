@@ -64,7 +64,7 @@ def main():
             exit(1)
 
     parser = argparse.ArgumentParser(description="cMusic, for all your music needs.")
-    parser.add_argument("command", help="The command to run.", choices=["play", "index", "version", "list", "search", "c", "p", "v", "q"])
+    parser.add_argument("command", help="The command to run.", choices=["play", "index", "version", "list", "search", "c", "p", "v", "q", "edit", "info"])
     parser.add_argument("args", help="Arguments for the command.", nargs="*")
     parser.add_argument("--loop", help="Loops the song if set", action="store_true")
     parser.add_argument("--shuffle", help="Shuffles the songs if set", action="store_true")

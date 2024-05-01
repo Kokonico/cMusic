@@ -24,18 +24,6 @@ from tinytag import TinyTag
 def main(args: dict):
     """Main function for cMusic."""
 
-    if args["background"] and not args["_background_process"]:
-        # tmux time
-        args["_background_process"] = True
-        subprocess.run(["tmux", "new", "-d", "-s", "cmusic_background", "cmusic", "play", *args["args"]],
-                       stderr=subprocess.PIPE)
-        # run the background process
-        subprocess.run(["tmux", "send-keys", "-t", "cmusic_background", "python cmusic/main.py", "C-m"],
-                       stderr=subprocess.PIPE)
-        # Detach from the tmux session
-        subprocess.run(["tmux", "detach", "-s", "cmusic_background"], stderr=subprocess.PIPE)
-        return
-
     if args["reformat"]:
         # reformat the library
         indexlib.reformat()
@@ -45,6 +33,27 @@ def main(args: dict):
 
     match args["command"]:
         case "play":
+            # check if the background process is running
+            if not args["_background_process"]:
+                # activate tmux session (same command as this one, but with the _background_process flag and no
+                # --background flag)
+                args["_background_process"] = True
+                background = args["background"]
+                args["background"] = False
+                # load tmux session
+
+                # get all flags from the args dict
+                flags = [f"--{flag}" for flag in args if args[flag] is True]
+                # get all args from the args dict
+                args = [args["command"]] + [arg for arg in args["args"] if "--" + arg not in flags]
+
+                subprocess.run(["tmux", "new-session", "-d", "-s", "cmusic_background", "cmusic"] + args + flags,
+                               stderr=subprocess.PIPE)
+                subprocess.run(["tmux", "detach", "-t", "cmusic_background"], stderr=subprocess.PIPE)
+                if not background:
+                    pull_session("cmusic_background")
+                return
+
             if args["shuffle"]:
                 # shuffle the songs (args.args)
                 random.shuffle(args["args"])
@@ -155,8 +164,6 @@ def main(args: dict):
                 print("-" * 30)
                 print(f"Title: {song[2]}\nArtist: {song[3]}\nAlbum: {song[4]}\nGenre: {song[6]}\nYear: {song[7]}")
                 print("-" * 30)
-
-
 
 
 def scan_library(songname):
@@ -336,8 +343,14 @@ def play(song_path, song_data, looped, shuffle, config):  # will error if config
 
 def pull_session(session_name):
     """Pull a tmux session to the foreground."""
+    # check if the session exists
+    tmux_check = subprocess.run(["tmux", "has-session", "-t", session_name], stdout=subprocess.PIPE, stderr=subprocess.PIPE)
+    if tmux_check.returncode != 0:
+        MAIN.log(Warn(f"Session '{session_name}' not found."))
+        print(f"Session '{session_name}' not found.")
+        return
     # figure out the current setting for status bar
-    status = subprocess.run(["tmux", "show", "-g", "status"], stdout=subprocess.PIPE).stdout.decode("utf-8").strip().split(" ")[-1]
+    status = subprocess.run(["tmux", "show", "-g", "status"], stdout=subprocess.PIPE, stderr=subprocess.PIPE).stdout.decode("utf-8").strip().split(" ")[-1]
     subprocess.run(["tmux", "set", "-g", "status", "off"], stderr=subprocess.PIPE)
     subprocess.run(["tmux", "attach", "-t", session_name], stderr=subprocess.PIPE)
     subprocess.run(["tmux", "set", "-g", "status", f"{status}"], stderr=subprocess.PIPE)

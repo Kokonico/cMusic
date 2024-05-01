@@ -55,15 +55,15 @@ NOW PLAYING: Altars of Apostasy by Heaven Pierce Her (Ultrakill: Imperfect Hatre
 << || >> 01:44 / 05:37 ────○ 🔊 100% 🔁
 ```
 
-<!--
+
 if you want, you can activate background mode by adding the `--background` flag to the command.
 ```sh
 cmusic play <Song> --background
 ```
 it will play the Song in the background, and you can continue using the terminal.
 
-note: if you want to return to the player, you can use `cmusic` without any arguments.
--->
+note: if you want to return to the player, you can use `cmusic c`
+
 
 ### Music Controls
 
@@ -72,6 +72,7 @@ to control the music when it's not in the background, you can use the following 
 - `q` to quit the player.
 - `shift + (+)` to increase the volume.
 - `shift + (-)` to decrease the volume.
+- `e` to enter background mode.
 
 ### commands
 
@@ -81,16 +82,14 @@ to control the music when it's not in the background, you can use the following 
 - `cmusic search <query>` to search for Songs in the library.
 
 <!-- comment this out for now until I implement it. -->
-<!--
+
 #### background mode commands
 
-- `cmusic toggle` to pause/play the current Song
-- `cmusic next` to play the next Song.
-- `cmusic prev` to play the previous Song.
-- `cmusic restart` to restart the current Song.
-- `cmusic seek <time>` to seek the Song to a specific time.
-- `cmusic volume <volume>` to change the volume of the player.
--->
+- `cmusic p` to pause/play the current Song
+- `cmusic v <volume>` to change the volume of the player.
+- `cmusic c` to return to the player.
+- `cmusic q` to quit the player.
+
 
 ## License
 

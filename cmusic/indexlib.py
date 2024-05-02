@@ -133,6 +133,7 @@ def index(song_file):
             print("Not indexing song.")
             return
         # update the questions
+        log.log(Debug(f"Values: {song_name}, {artist}, {album}, {year}, {genre}"))
         inquirer_questions = [
             inquirer.List("what_to_edit", message="What field would you like to edit?",
                           choices=[f"Song Name ({song_name})", f"Artist ({artist})", f"Album ({album})",

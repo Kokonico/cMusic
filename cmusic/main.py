@@ -35,6 +35,7 @@ def main(args: dict):
         case "play":
             # check if the background process is running
             if not args["_background_process"]:
+                MAIN.log(Info("This is a direct call to play a song, creating a new tmux session."))
                 # activate tmux session (same command as this one, but with the _background_process flag and no
                 # --background flag)
                 args["_background_process"] = True
@@ -47,12 +48,27 @@ def main(args: dict):
                 # get all args from the args dict
                 args = [args["command"]] + [arg for arg in args["args"] if "--" + arg not in flags]
 
-                subprocess.run(["tmux", "new-session", "-d", "-s", "cmusic_background", "cmusic"] + args + flags,
-                               stderr=subprocess.PIPE)
+                MAIN.log(Debug(f"args: {args}"))
+                MAIN.log(Debug(f"flags: {flags}"))
+
+                constructed_command = ["tmux", "new-session", "-d", "-s", "cmusic_background", "cmusic"] + args + flags
+
+                MAIN.log(Debug(f"Running command: {constructed_command}"))
+
+                tmux = subprocess.run(constructed_command, stderr=subprocess.PIPE)
+                if tmux.returncode != 0:
+                    MAIN.log(Error("Failed to start background process."))
+                    MAIN.log(Error(tmux.stderr.decode('utf-8')))
+                    print(f"Failed to Initiate song playback. ({tmux.stderr.decode('utf-8')})")
+                    return
                 subprocess.run(["tmux", "detach", "-t", "cmusic_background"], stderr=subprocess.PIPE)
+
                 if not background:
+                    MAIN.log(Info("Pulling session to foreground."))
                     pull_session("cmusic_background")
+                MAIN.log(Info("Background process started, peace out."))
                 return
+            MAIN.log(Info("Starting cMusic (for real this time)"))
 
             if args["shuffle"]:
                 # shuffle the songs (args.args)
@@ -61,7 +77,7 @@ def main(args: dict):
             songs = [scan_library(song) for song in args["args"] if song is not None]
             # remove any None values from the list
             songs = [song for song in songs if song is not None]
-            # find any lists in the song list and add them to the songs list
+            # find any lists in the song list and add them to the song list
             for song in songs:
                 if isinstance(song, list):
                     songs += song
@@ -99,11 +115,17 @@ def main(args: dict):
         case "search":
             # search for a song in the library
             songs = indexlib.search_index(config["library"], args["args"][0])
+            MAIN.log(Info(f"Found {len(songs)} songs."))
+            MAIN.log(Debug(f"Songs IDs: {', '.join([song[0] for song in songs]).strip()}"))
             for song in songs:
                 print(f"{song[2]} by {song[3]} {f'({song[4]})' if song[4] not in [None, 'None'] else ''}")
 
         case "c":
-            pull_session("cmusic_background")
+            try:
+                pull_session("cmusic_background")
+            except FileNotFoundError:
+                MAIN.log(Warn("Background process not found."))
+                print("Background process not found, is it running?")
 
         case "p":
             # toggle the background process
@@ -112,6 +134,8 @@ def main(args: dict):
             if tmux_check.returncode == 0:
                 # session exists, send space to the session
                 subprocess.run(["tmux", "send-keys", "-t", "cmusic_background", " ", "C-m"])
+            else:
+                print("Background process not found, is it running?")
 
         case "v":
             # set the volume, will automatically save to the config file (and apply to the background process)
@@ -119,18 +143,24 @@ def main(args: dict):
                 volume = int(args["args"][0])
                 if volume > 100:
                     volume = 100
+                    MAIN.log(Warn("Volume must be between 0 and 100, correcting."))
                 elif volume < 0:
                     volume = 0
+                    MAIN.log(Warn("Volume must be between 0 and 100, correcting."))
                 with open(CONFIG_FILE, "w") as f:
                     config["volume"] = volume
                     f.write(json.dumps(config, indent=4))
+                    MAIN.log(Info(f"Volume set to {volume}"))
             except ValueError:
                 MAIN.log(Warn("Volume must be an integer."))
                 print("Volume must be an integer.")
+            except IndexError:
+                MAIN.log(Warn("Volume must be provided."))
+                print("Volume must be provided.")
 
         case "q":
             # quit the background process
-            status = subprocess.run(["tmux", "kill-session", "-t", "cmusic_background"], stderr=subprocess.PIPE)
+            status = subprocess.run(["tmux", "kill-session", "-t", "cmusic_background"], stderr=subprocess.PIPE, stdout=subprocess.PIPE)
             if status.returncode != 0:
                 MAIN.log(Warn("Background process not found."))
                 print("Background process not found.")
@@ -143,9 +173,11 @@ def main(args: dict):
                 print(f"Could not find song '{args['args'][0]}' in library.")
                 return
             if isinstance(song, list):
+                MAIN.log(Info("Multiple songs found, editing all."))
                 for s in song:
                     indexlib.edit_tags(s[0])
             else:
+                MAIN.log(Info("Editing song."))
                 indexlib.edit_tags(song[0])
 
         case "info":
@@ -156,14 +188,28 @@ def main(args: dict):
                 print(f"Could not find song '{args['args'][0]}' in library.")
                 return
             if isinstance(song, list):
+                MAIN.log(Info("Multiple songs found, displaying all."))
                 print("-" * 30)
                 for s in song:
                     print(f"Title: {s[2]}\nArtist: {s[3]}\nAlbum: {s[4]}\nGenre: {s[6]}\nYear: {s[7]}")
                     print("-" * 30)
             else:
+                MAIN.log(Info("Displaying song info."))
                 print("-" * 30)
                 print(f"Title: {song[2]}\nArtist: {song[3]}\nAlbum: {song[4]}\nGenre: {song[6]}\nYear: {song[7]}")
                 print("-" * 30)
+
+        case "flush":
+            # print out all log messages
+            are_you_sure = input("Are you sure you want to flush the log, this will print all lines and clear it (can "
+                                 "be up to 1000 lines)? (y/n): ")
+            if are_you_sure.lower() == "y":
+                MAIN.dump_messages_to_console(None)
+                MAIN.wipe_messages(wipe_logfiles=True)
+                print("Log flushed.")
+                MAIN.log(Info("Log flushed."))
+            else:
+                print("Aborted.")
 
 
 def scan_library(songname):
@@ -185,26 +231,31 @@ def scan_library(songname):
         return None
     elif len(songs) == 1:
         # get the song path (file)
+        MAIN.log(Info(f"Found song '{songname}' in library."))
         return songs[0]
     else:
         # multiple songs found, ask the user which one they want to play
         if len(songs) > 1:
+            MAIN.log(Info(f"Found {len(songs)} songs matching '{songname}' in library."))
             # ask the user which song they want to play
             questions = [
                 inquirer.List("song", message=f"Select the song that matches '{songname}'",
-                              choices=[song[2] for song in songs] + ["^^^ All of the above ^^^"])
+                              choices=[f"{song[2]}{f' by {song[3]}' if song[3] is not None else ''}" for song in songs] + ["^^^ All of the above ^^^"])
             ]
             answers = inquirer.prompt(questions)
             if answers is not None:
                 songname = answers["song"]
+                MAIN.log(Info(f"User selected song '{songname}'."))
             else:
                 # user cancelled
+                MAIN.log(Warn("User cancelled song selection."))
                 return None
 
-            if songname == "^^^ All of the above ^^^":  # TODO: code is crap, fix
+            if songname == "^^^ All of the above ^^^":  # TODO: code is kinda crap, fix
                 return [song for song in songs]
             for song in songs:
-                if song[2] == songname:
+                if song[2] == songname.split(" by ")[0] and (song[3] == songname.split(" by ")[1] if len(songname.split(" by ")) > 1 else True):
+                    MAIN.log(Info(f"User selected song '{song[2]}'."))
                     return song
 
 
@@ -344,13 +395,15 @@ def play(song_path, song_data, looped, shuffle, config):  # will error if config
 def pull_session(session_name):
     """Pull a tmux session to the foreground."""
     # check if the session exists
-    tmux_check = subprocess.run(["tmux", "has-session", "-t", session_name], stdout=subprocess.PIPE, stderr=subprocess.PIPE)
+    tmux_check = subprocess.run(["tmux", "has-session", "-t", session_name], stdout=subprocess.PIPE,
+                                stderr=subprocess.PIPE)
     if tmux_check.returncode != 0:
         MAIN.log(Warn(f"Session '{session_name}' not found."))
-        print(f"Session '{session_name}' not found.")
-        return
+        raise FileNotFoundError(f"Session '{session_name}' not found.")
     # figure out the current setting for status bar
-    status = subprocess.run(["tmux", "show", "-g", "status"], stdout=subprocess.PIPE, stderr=subprocess.PIPE).stdout.decode("utf-8").strip().split(" ")[-1]
+    status = \
+    subprocess.run(["tmux", "show", "-g", "status"], stdout=subprocess.PIPE, stderr=subprocess.PIPE).stdout.decode(
+        "utf-8").strip().split(" ")[-1]
     subprocess.run(["tmux", "set", "-g", "status", "off"], stderr=subprocess.PIPE)
     subprocess.run(["tmux", "attach", "-t", session_name], stderr=subprocess.PIPE)
     subprocess.run(["tmux", "set", "-g", "status", f"{status}"], stderr=subprocess.PIPE)

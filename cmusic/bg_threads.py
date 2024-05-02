@@ -25,7 +25,7 @@ class KeyHandler(threading.Thread):
         self.stop_flag = threading.Event()
         self.is_bg = is_bg
         self.MAIN = LogNode("KeyHandler", log_file=LOG_FILE)
-        MAIN.log(Info(f"Key Handler initialized with parent thread: {threading.current_thread().name}"))
+        self.MAIN.log(Info(f"Key Handler initialized with parent thread: {threading.current_thread().name}"))
 
     def run(self):
         old_settings = termios.tcgetattr(sys.stdin)

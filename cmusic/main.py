@@ -240,7 +240,7 @@ def scan_library(songname):
             # ask the user which song they want to play
             questions = [
                 inquirer.List("song", message=f"Select the song that matches '{songname}'",
-                              choices=[f"{song[2]}{f' by {song[3]}' if song[3] is not None else ''}" for song in songs] + ["^^^ All of the above ^^^"])
+                              choices=[song[2] for song in songs] + ["^^^ All of the above ^^^"])
             ]
             answers = inquirer.prompt(questions)
             if answers is not None:
@@ -254,7 +254,7 @@ def scan_library(songname):
             if songname == "^^^ All of the above ^^^":  # TODO: code is kinda crap, fix
                 return [song for song in songs]
             for song in songs:
-                if song[2] == songname.split(" by ")[0] and (song[3] == songname.split(" by ")[1] if len(songname.split(" by ")) > 1 else True):
+                if song[2] == songname:
                     MAIN.log(Info(f"User selected song '{song[2]}'."))
                     return song
 

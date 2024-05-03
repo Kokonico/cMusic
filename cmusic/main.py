@@ -8,7 +8,7 @@ import subprocess
 # local package imports
 from . import indexlib
 from . import bg_threads
-from .constants import MAIN, config, CONFIG_FILE
+from .constants import MAIN, config, CONFIG_FILE, LIBRARY
 
 import math
 import random
@@ -24,6 +24,8 @@ from tinytag import TinyTag
 def main(args: dict):
     """Main function for cMusic."""
 
+    indexlib.init_index(LIBRARY)
+
     if args["reformat"]:
         # reformat the library
         indexlib.reformat()
@@ -33,6 +35,7 @@ def main(args: dict):
 
     match args["command"]:
         case "play":
+
             # check if the background process is running
             if not args["_background_process"]:
                 MAIN.log(Info("This is a direct call to play a song, creating a new tmux session."))
@@ -69,6 +72,22 @@ def main(args: dict):
                 MAIN.log(Info("Background process started, peace out."))
                 return
             MAIN.log(Info("Starting cMusic (for real this time)"))
+
+            # check if --playlist was provided
+            if args["playlist"]:
+                # change song args to the playlist contents
+                playlist = indexlib.search_playlist(args["args"][0])
+                if playlist is None:
+                    MAIN.log(Warn(f"Playlist '{args['args'][0]}' not found."))
+                    print(f"Playlist '{args['args'][0]}' not found.")
+                    return
+                songs = indexlib.get_playlist_contents(playlist)
+                if songs is None:
+                    MAIN.log(Warn(f"Playlist '{args['args'][0]}' is empty."))
+                    print(f"Playlist '{args['args'][0]}' is empty.")
+                    return
+                MAIN.log(Info(f"Playlist '{args['args'][0]}' found, playing songs."))
+                args["args"] = [song[2] for song in songs]
 
             if args["shuffle"]:
                 # shuffle the songs (args.args)
@@ -116,7 +135,7 @@ def main(args: dict):
             # search for a song in the library
             songs = indexlib.search_index(config["library"], args["args"][0])
             MAIN.log(Info(f"Found {len(songs)} songs."))
-            MAIN.log(Debug(f"Songs IDs: {', '.join([song[0] for song in songs]).strip()}"))
+            MAIN.log(Debug(f"Songs IDs: {', '.join([str(song[0]) for song in songs]).strip()}"))
             for song in songs:
                 print(f"{song[2]} by {song[3]} {f'({song[4]})' if song[4] not in [None, 'None'] else ''}")
 
@@ -210,6 +229,100 @@ def main(args: dict):
                 MAIN.log(Info("Log flushed."))
             else:
                 print("Aborted.")
+
+        case "playlist":
+            # check playlist command
+            match args["args"][0]:
+                case "create":
+                    # create a playlist
+                    playlist_name = args["args"][1]
+                    songs = args["args"][2:]
+                    # get the songs from the library
+                    songs = [scan_library(song) for song in songs]
+                    # find any lists in the song list and add them to the song list
+                    for song in songs:
+                        if isinstance(song, list):
+                            songs += song
+                            songs.remove(song)
+                    # remove any None values from the list
+                    songs = [song for song in songs if song is not None]
+                    # create the playlist
+                    indexlib.create_playlist(playlist_name, songs)
+                    MAIN.log(Info(f"Playlist '{playlist_name}' created."))
+                    print(f"Playlist '{playlist_name}' created.")
+                case "list":
+                    # list all playlists
+                    try:
+                        playlist = indexlib.search_playlist(args["args"][1])
+                        # list a specific playlist
+                        playlist = indexlib.get_playlist_contents(playlist)
+                        if playlist is None:
+                            MAIN.log(Warn(f"Playlist '{args['args'][1]}' not found."))
+                            print(f"Playlist '{args['args'][1]}' not found.")
+                            return
+                        MAIN.log(Info(f"Playlist '{args['args'][1]}' contents:"))
+                        print(f"Playlist '{args['args'][1]}' contents:")
+                        for song in playlist:
+                            print(f"{song[2]} by {song[3]} {f'({song[4]})' if song[4] not in [None, 'None'] else ''}")
+                            MAIN.log(Debug(f"Song: {song[2]} by {song[3]} {f'({song[4]})' if song[4] not in [None, 'None'] else ''}"))
+                    except IndexError:
+                        # list all playlists
+                        playlists = indexlib.list_playlists()
+                        MAIN.log(Info("Playlists:"))
+                        print("Playlists:")
+                        for playlist in playlists:
+                            print(playlist[1])
+                            MAIN.log(Debug(playlist))
+                case "remove":
+                    # remove a song from a playlist
+                    try:
+                        playlist_name = args["args"][1]
+                        song_name = args["args"][2]
+                        playlist = indexlib.search_playlist(playlist_name)
+                        songs = [scan_library(song_name) for song in args["args"][2:]]
+                        # add any lists to the songs list
+                        for song in songs:
+                            if isinstance(song, list):
+                                songs += song
+                                songs.remove(song)
+                        # remove any None values from the list
+                        songs = [tuple(song) for song in songs if song is not None]
+                        for song in songs:
+                            indexlib.remove_from_playlist(playlist, song)
+                    except IndexError:
+                        MAIN.log(Warn("Playlist and song name must be provided."))
+                        print("Playlist and song name must be provided.")
+                        return
+                case "add":
+                    # add a song to a playlist
+                    try:
+                        playlist_name = args["args"][1]
+                        songs = [scan_library(song) for song in args["args"][2:]]
+                        # add any lists to the songs list
+                        for song in songs:
+                            if isinstance(song, list):
+                                songs += song
+                                songs.remove(song)
+                        # remove any None values from the list
+                        songs = [tuple(song) for song in songs if song is not None]
+                        playlist = indexlib.search_playlist(playlist_name)
+                        for song in songs:
+                            indexlib.add_to_playlist(playlist, song)
+                    except IndexError:
+                        MAIN.log(Warn("Playlist and song name must be provided."))
+                        print("Playlist and song name must be provided.")
+                        return
+                case "delete":
+                    # delete a playlist
+                    try:
+                        playlist_name = args["args"][1]
+                        playlist = indexlib.search_playlist(playlist_name)
+                        indexlib.delete_playlist(playlist)
+                    except IndexError:
+                        MAIN.log(Warn("Playlist name must be provided."))
+                        print("Playlist name must be provided.")
+                        return
+
 
 
 def scan_library(songname):

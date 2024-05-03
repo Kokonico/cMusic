@@ -90,6 +90,13 @@ to control the music when it's not in the background, you can use the following 
 - `cmusic c` to return to the player.
 - `cmusic q` to quit the player.
 
+#### playlist commands
+
+- `cmusic playlist create <name> <song>(s)` to create a playlist.
+- `cmusic playlist add <name> <song>(s)` to add a Song to a playlist.
+- `cmusic playlist remove <name> <song>(s)` to remove a Song from a playlist.
+- `cmusic playlist delete <name>` to delete a playlist.
+
 
 ## License
 

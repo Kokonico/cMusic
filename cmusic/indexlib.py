@@ -24,6 +24,23 @@ def safe(filename):
         return None
     return re.sub(r'[\\/*?:"<>| ]', '_', filename)
 
+def init_index(library_file: str):
+    """initialize an index file for a library"""
+    conn = sqlite3.connect(os.path.join(library_file, 'index.db'))
+    c = conn.cursor()
+    # create table to link tags to file paths
+    c.execute(
+        'CREATE TABLE IF NOT EXISTS songs (id INTEGER PRIMARY KEY, path TEXT, title TEXT, artist TEXT, album TEXT, duration REAL, genre TEXT, year INTEGER)')
+    conn.commit()
+    # playlists (many to many)
+    c.execute(
+        'CREATE TABLE IF NOT EXISTS playlists (id INTEGER PRIMARY KEY, name TEXT)')
+    conn.commit()
+    c.execute(
+        'CREATE TABLE IF NOT EXISTS playlist_songs (playlist_id INTEGER, song_id INTEGER)')
+    conn.commit()
+    conn.close()
+
 
 def index_library(library_file: str):
     """index a library of songs, and store the information in a file for easier lookup"""
@@ -305,3 +322,123 @@ def edit_tags(id: int):
     log.log(Info(f"Song '{song[2]}' edited."))
     print(f"Song '{song[2]}' edited.")
     reformat()  # reformat the library to apply changes
+
+def create_playlist(name: str, songs: list):
+    """create a playlist"""
+    conn = sqlite3.connect(os.path.join(config["library"], 'index.db'))
+    c = conn.cursor()
+    c.execute('SELECT * FROM playlists WHERE name = ?', (name,))
+    if c.fetchone() is not None:
+        log.log(Warn(f"Playlist '{name}' already exists."))
+        print(f"Playlist '{name}' already exists.")
+        return
+    c.execute('INSERT INTO playlists (name) VALUES (?)', (name,))
+    conn.commit()
+    c.execute('SELECT * FROM playlists WHERE name = ?', (name,))
+    playlist_id = c.fetchone()[0]
+    for song in songs:
+        c.execute('INSERT INTO playlist_songs (playlist_id, song_id) VALUES (?, ?)', (playlist_id, song[0]))
+        conn.commit()
+    conn.close()
+    log.log(Info(f"Playlist '{name}' created."))
+
+def delete_playlist(playlist: tuple):
+    """delete a playlist"""
+    conn = sqlite3.connect(os.path.join(config["library"], 'index.db'))
+    c = conn.cursor()
+    c.execute('DELETE FROM playlists WHERE id = ?', (playlist[0],))
+    conn.commit()
+    conn.close()
+    log.log(Info(f"Playlist '{playlist[1]}' deleted."))
+
+def list_playlists():
+    """list all playlists"""
+    conn = sqlite3.connect(os.path.join(config["library"], 'index.db'))
+    c = conn.cursor()
+    c.execute('SELECT * FROM playlists')
+    playlists = c.fetchall()
+    conn.close()
+    return playlists
+
+def list_playlist(playlist: tuple):
+    """list all songs in a playlist"""
+    conn = sqlite3.connect(os.path.join(config["library"], 'index.db'))
+    c = conn.cursor()
+    c.execute('SELECT * FROM playlist_songs WHERE playlist_id = ?', (playlist[0],))
+    songs = c.fetchall()
+    song_data = []
+    for song in songs:
+        c.execute('SELECT * FROM songs WHERE id = ?', (song[1],))
+        song_info = c.fetchone()
+        song_data.append(song_info)
+    conn.close()
+    return song_data
+
+def add_to_playlist(playlist: tuple, song: tuple):
+    """add a song to a playlist"""
+    conn = sqlite3.connect(os.path.join(config["library"], 'index.db'))
+    c = conn.cursor()
+    c.execute('INSERT INTO playlist_songs (playlist_id, song_id) VALUES (?, ?)', (playlist[0], song[0]))
+    conn.commit()
+    conn.close()
+    log.log(Info(f"Song '{song}' added to playlist '{playlist[1]}'."))
+
+def remove_from_playlist(playlist: tuple, song: tuple):
+    """remove a song from a playlist"""
+    conn = sqlite3.connect(os.path.join(config["library"], 'index.db'))
+    c = conn.cursor()
+    c.execute('DELETE FROM playlist_songs WHERE playlist_id = ? AND song_id = ?', (playlist[0], song[0]))
+    conn.commit()
+    conn.close()
+    log.log(Info(f"Song '{song}' removed from playlist '{playlist[1]}'."))
+
+def edit_playlist_name(playlist: tuple, new_name: str):
+    """edit a playlist"""
+    conn = sqlite3.connect(os.path.join(config["library"], 'index.db'))
+    c = conn.cursor()
+    c.execute('UPDATE playlists SET name = ? WHERE id = ?', (new_name, playlist[0]))
+    conn.commit()
+    conn.close()
+    log.log(Info(f"Playlist '{playlist[1]}' edited to '{new_name}'."))
+
+def get_playlist_contents(playlist: tuple):
+    """get the contents of a playlist"""
+    conn = sqlite3.connect(os.path.join(config["library"], 'index.db'))
+    c = conn.cursor()
+    if playlist is None:
+        log.log(Warn(f"Playlist '{playlist[1]}' not found."))
+        print(f"Playlist '{playlist[1]}' not found.")
+        return
+    c.execute('SELECT * FROM playlist_songs WHERE playlist_id = ?', (playlist[0],))
+    songs = c.fetchall()
+    song_data = []
+    for song in songs:
+        c.execute('SELECT * FROM songs WHERE id = ?', (song[1],))
+        song_info = c.fetchone()
+        song_data.append(song_info)
+    conn.close()
+    return song_data
+
+def search_playlist(name: str):
+    """search for the data of a playlist"""
+    conn = sqlite3.connect(os.path.join(config["library"], 'index.db'))
+    c = conn.cursor()
+    c.execute('SELECT * FROM playlists WHERE name LIKE ?', (name,))
+    playlist = c.fetchall()
+    conn.close()
+    # if multiple playlists, ask the user to choose
+    if len(playlist) > 1:
+        playlists = []
+        for p in playlist:
+            playlists.append(p[1])
+        inquirer_questions = [
+            inquirer.List("playlist", message="Which playlist would you like to choose?", choices=playlists)
+        ]
+        playlist = inquirer.prompt(inquirer_questions)["playlist"]
+        return playlist
+    elif len(playlist) == 0:
+        log.log(Warn(f"Playlist '{name}' not found."))
+        print(f"Playlist '{name}' not found.")
+        return
+    else:
+        return playlist[0]

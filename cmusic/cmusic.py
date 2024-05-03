@@ -64,7 +64,7 @@ def main():
             exit(1)
 
     parser = argparse.ArgumentParser(description="cMusic, for all your music needs.")
-    parser.add_argument("command", help="The command to run.", choices=["play", "index", "version", "list", "search", "c", "p", "v", "q", "edit", "info", "flush"])
+    parser.add_argument("command", help="The command to run.", choices=["play", "index", "version", "list", "search", "c", "p", "v", "q", "edit", "info", "flush", "playlist"])
     parser.add_argument("args", help="Arguments for the command.", nargs="*")
     parser.add_argument("--loop", help="Loops the song if set", action="store_true")
     parser.add_argument("--shuffle", help="Shuffles the songs if set", action="store_true")
@@ -75,6 +75,7 @@ def main():
     parser.add_argument("--reformat", help="Reformat the library, actually edits the files, is done automatically before re-indexing.", action="store_true")
     parser.add_argument("--cleanup", help="Clean up the library, removing any files that are not in the index, or vice-versa", action="store_true")
     parser.add_argument("--_background_process", help="Internal use only, do not use.", action="store_true")
+    parser.add_argument("--playlist", help="Search for a playlist instead of a song.", action="store_true")
     args = parser.parse_args()
     args = vars(args)
     try:

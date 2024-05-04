@@ -85,13 +85,13 @@ files = [
 
 [[package]]
 name = "objlog"
-version = "2.1.2"
+version = "2.1.3"
 description = "Logging, Objectified."
 optional = false
 python-versions = "<4.0,>=3.10"
 files = [
-    {file = "objlog-2.1.2-py3-none-any.whl", hash = "sha256:6fbd2e267daa29e685cf91ae39de89d80e4399f1bad6fc845981335cd5ac8c16"},
-    {file = "objlog-2.1.2.tar.gz", hash = "sha256:011855cd01af019e1119a1c618b77b064405c9bf2491d14a9abf737fae398d82"},
+    {file = "objlog-2.1.3-py3-none-any.whl", hash = "sha256:443dec1019d0d2080106777dc63593d5bcdb8c24698c1edcadf291bec035e744"},
+    {file = "objlog-2.1.3.tar.gz", hash = "sha256:98ac8539ae26941e82d769379c9c3dcb7c3041ae4032c286b38124e3f68cd4eb"},
 ]
 
 [[package]]
@@ -254,4 +254,4 @@ files = [
 [metadata]
 lock-version = "2.0"
 python-versions = "^3.12"
-content-hash = "538e00a760580672773cd3d9340f73fb34c0a84dba01d2f7a0043f103fcde779"
+content-hash = "620db2b5978efedc54835968a869d94d1e81ea4da4f26def9a4dd9ab2221d737"

@@ -25,7 +25,11 @@ class KeyHandler(threading.Thread):
         self.stop_flag = threading.Event()
         self.is_bg = is_bg
         self.MAIN = LogNode("KeyHandler", log_file=LOG_FILE)
-        self.MAIN.log(Info(f"Key Handler initialized with parent thread: {threading.current_thread().name}"))
+        self.MAIN.log(
+            Info(
+                f"Key Handler initialized with parent thread: {threading.current_thread().name}"
+            )
+        )
 
     def run(self):
         old_settings = termios.tcgetattr(sys.stdin)
@@ -40,7 +44,9 @@ class KeyHandler(threading.Thread):
                             with open(os.path.join(CONFIG_FILE), "w") as f:
                                 f.write(json.dumps(config, indent=4))
                             self.MAIN.log(Info(f"Volume set to {config['volume']}"))
-                        case "_":  # seems weird, but it's the minus key (shift + -), just for consistency.
+                        case (
+                            "_"
+                        ):  # seems weird, but it's the minus key (shift + -), just for consistency.
                             config["volume"] -= 5
                             # load the config file and set the volume
                             with open(os.path.join(CONFIG_FILE), "w") as f:
@@ -57,8 +63,11 @@ class KeyHandler(threading.Thread):
                         case "e":
                             # detach tmux session (this process is within it)
                             self.MAIN.log(Info("Detaching tmux session."))
-                            subprocess.run(["tmux", "detach", "-s", "cmusic_background"], stderr=subprocess.PIPE,
-                                           stdout=subprocess.PIPE)
+                            subprocess.run(
+                                ["tmux", "detach", "-s", "cmusic_background"],
+                                stderr=subprocess.PIPE,
+                                stdout=subprocess.PIPE,
+                            )
                         case "q":
                             # stop the song
                             self.MAIN.log(Info("Stopping the song."))

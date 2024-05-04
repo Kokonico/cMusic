@@ -17,7 +17,7 @@ MAIN = objlog.LogNode("CMUSIC", log_file=LOG_FILE)
 
 DEFAULT_CONFIG = {
     "library": os.path.join(os.path.expanduser("~"), "cMusic Library"),
-    "volume": 100
+    "volume": 100,
 }
 
 # check if the cmusic directory exists

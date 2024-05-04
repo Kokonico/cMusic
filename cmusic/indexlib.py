@@ -2,7 +2,6 @@
 
 import re
 import os
-import sys
 import tinytag
 import sqlite3
 import mutagen
@@ -16,68 +15,85 @@ from .constants import config
 import objlog
 from objlog.LogMessages import Debug, Info, Warn, Error, Fatal
 
-log = objlog.LogNode("INDEXER", log_file=os.path.join(os.path.expanduser("~"), ".cmusic", 'cmusic.log'))
+log = objlog.LogNode(
+    "INDEXER", log_file=os.path.join(os.path.expanduser("~"), ".cmusic", "cmusic.log")
+)
 
 
 def safe(filename):
     if filename is None:
         return None
-    return re.sub(r'[\\/*?:"<>| ]', '_', filename)
+    return re.sub(r'[\\/*?:"<>| ]', "_", filename)
+
 
 def init_index(library_file: str):
     """initialize an index file for a library"""
-    conn = sqlite3.connect(os.path.join(library_file, 'index.db'))
+    conn = sqlite3.connect(os.path.join(library_file, "index.db"))
     c = conn.cursor()
     # create table to link tags to file paths
     c.execute(
-        'CREATE TABLE IF NOT EXISTS songs (id INTEGER PRIMARY KEY, path TEXT, title TEXT, artist TEXT, album TEXT, duration REAL, genre TEXT, year INTEGER)')
+        "CREATE TABLE IF NOT EXISTS songs (id INTEGER PRIMARY KEY, path TEXT, title TEXT, artist TEXT, album TEXT, duration REAL, genre TEXT, year INTEGER)"
+    )
     conn.commit()
     # playlists (many to many)
     c.execute(
-        'CREATE TABLE IF NOT EXISTS playlists (id INTEGER PRIMARY KEY, name TEXT)')
+        "CREATE TABLE IF NOT EXISTS playlists (id INTEGER PRIMARY KEY, name TEXT)"
+    )
     conn.commit()
     c.execute(
-        'CREATE TABLE IF NOT EXISTS playlist_songs (playlist_id INTEGER, song_id INTEGER)')
+        "CREATE TABLE IF NOT EXISTS playlist_songs (playlist_id INTEGER, song_id INTEGER)"
+    )
     conn.commit()
     conn.close()
 
 
 def index_library(library_file: str):
     """index a library of songs, and store the information in a file for easier lookup"""
-    if os.path.exists(os.path.join(library_file, 'index.db')):
+    if os.path.exists(os.path.join(library_file, "index.db")):
         log.log(Warn("Library already indexed, deleting old index"))
-        os.remove(os.path.join(library_file, 'index.db'))
+        os.remove(os.path.join(library_file, "index.db"))
 
-    conn = sqlite3.connect(os.path.join(library_file, 'index.db'))
+    conn = sqlite3.connect(os.path.join(library_file, "index.db"))
     c = conn.cursor()
     # create table to link tags to file paths
     c.execute(
-        'CREATE TABLE IF NOT EXISTS songs (id INTEGER PRIMARY KEY, path TEXT, title TEXT, artist TEXT, album TEXT, duration REAL, genre TEXT, year INTEGER)')
+        "CREATE TABLE IF NOT EXISTS songs (id INTEGER PRIMARY KEY, path TEXT, title TEXT, artist TEXT, album TEXT, duration REAL, genre TEXT, year INTEGER)"
+    )
     conn.commit()
 
     # get all files in the library
     for root, _, files in os.walk(library_file):
         for file in files:
-            if file.endswith('.mp3'):
+            if file.endswith(".mp3"):
                 path = os.path.join(root, file)
                 # get the tags of the file
                 tags = tinytag.TinyTag.get(path)
                 log.log(Info(f"Indexing {tags.title} by {tags.artist}"))
                 # insert the tags into the database
                 c.execute(
-                    'INSERT INTO songs (path, title, artist, album, duration, genre, year) VALUES (?, ?, ?, ?, ?, ?, ?)',
-                    (path, tags.title, tags.artist, tags.album, tags.duration, tags.genre, tags.year))
+                    "INSERT INTO songs (path, title, artist, album, duration, genre, year) VALUES (?, ?, ?, ?, ?, ?, ?)",
+                    (
+                        path,
+                        tags.title,
+                        tags.artist,
+                        tags.album,
+                        tags.duration,
+                        tags.genre,
+                        tags.year,
+                    ),
+                )
                 conn.commit()
     conn.close()
 
 
 def index_file(library_file: str, file: str):
     """index a single file"""
-    conn = sqlite3.connect(os.path.join(library_file, 'index.db'))
+    conn = sqlite3.connect(os.path.join(library_file, "index.db"))
     c = conn.cursor()
     # create table to link tags to file paths
     c.execute(
-        'CREATE TABLE IF NOT EXISTS songs (id INTEGER PRIMARY KEY, path TEXT, title TEXT, artist TEXT, album TEXT, duration REAL, genre TEXT, year INTEGER)')
+        "CREATE TABLE IF NOT EXISTS songs (id INTEGER PRIMARY KEY, path TEXT, title TEXT, artist TEXT, album TEXT, duration REAL, genre TEXT, year INTEGER)"
+    )
     conn.commit()
 
     # get all files in the library
@@ -87,18 +103,35 @@ def index_file(library_file: str, file: str):
     log.log(Info(f"Indexing {tags.title} by {tags.artist}"))
     # insert the tags into the database
     c.execute(
-        'INSERT INTO songs (path, title, artist, album, duration, genre, year) VALUES (?, ?, ?, ?, ?, ?, ?)',
-        (path, tags.title, tags.artist, tags.album, tags.duration, tags.genre, tags.year))
+        "INSERT INTO songs (path, title, artist, album, duration, genre, year) VALUES (?, ?, ?, ?, ?, ?, ?)",
+        (
+            path,
+            tags.title,
+            tags.artist,
+            tags.album,
+            tags.duration,
+            tags.genre,
+            tags.year,
+        ),
+    )
     conn.commit()
     conn.close()
 
 
 def search_index(library_file: str, search_term: str):
     """search the index for a song"""
-    conn = sqlite3.connect(os.path.join(library_file, 'index.db'))
+    conn = sqlite3.connect(os.path.join(library_file, "index.db"))
     c = conn.cursor()
-    c.execute('SELECT * FROM songs WHERE title LIKE ? OR artist LIKE ? OR album LIKE ? OR genre LIKE ? OR year LIKE ?',
-              ('%' + search_term + '%', '%' + search_term + '%', '%' + search_term + '%' , '%' + search_term + '%', '%' + search_term + '%'))
+    c.execute(
+        "SELECT * FROM songs WHERE title LIKE ? OR artist LIKE ? OR album LIKE ? OR genre LIKE ? OR year LIKE ?",
+        (
+            "%" + search_term + "%",
+            "%" + search_term + "%",
+            "%" + search_term + "%",
+            "%" + search_term + "%",
+            "%" + search_term + "%",
+        ),
+    )
     return c.fetchall()
 
 
@@ -118,13 +151,27 @@ def index(song_file):
     year = tags.year
     genre = tags.genre
     inquirer_questions = [
-        inquirer.List("what_to_edit", message="What field would you like to edit?", choices=[f"Song Name ({song_name})", f"Artist ({artist})", f"Album ({album})", f"Year ({year})", f"Genre ({genre})", f"Stop Editing", "Cancel"]),
-        ]
+        inquirer.List(
+            "what_to_edit",
+            message="What field would you like to edit?",
+            choices=[
+                f"Song Name ({song_name})",
+                f"Artist ({artist})",
+                f"Album ({album})",
+                f"Year ({year})",
+                f"Genre ({genre})",
+                f"Stop Editing",
+                "Cancel",
+            ],
+        ),
+    ]
     stop = False
     while not stop:
         what_to_edit = inquirer.prompt(inquirer_questions)["what_to_edit"]
         if what_to_edit == f"Song Name ({song_name})":
-            song_name = input(f"Enter the song name (leave blank to keep '{tags.title}'): ")
+            song_name = input(
+                f"Enter the song name (leave blank to keep '{tags.title}'): "
+            )
             if song_name == "":
                 song_name = tags.title
         elif what_to_edit == f"Artist ({artist})":
@@ -152,18 +199,31 @@ def index(song_file):
         # update the questions
         log.log(Debug(f"Values: {song_name}, {artist}, {album}, {year}, {genre}"))
         inquirer_questions = [
-            inquirer.List("what_to_edit", message="What field would you like to edit?",
-                          choices=[f"Song Name ({song_name})", f"Artist ({artist})", f"Album ({album})",
-                                   f"Year ({year})", f"Genre ({genre})", f"Stop Editing"]),
+            inquirer.List(
+                "what_to_edit",
+                message="What field would you like to edit?",
+                choices=[
+                    f"Song Name ({song_name})",
+                    f"Artist ({artist})",
+                    f"Album ({album})",
+                    f"Year ({year})",
+                    f"Genre ({genre})",
+                    f"Stop Editing",
+                ],
+            ),
         ]
     # copy the file to the library
     log.log(Info(f"Copying '{song_file}' to library..."))
     with open(song_file, "rb") as f:
-        new_song = os.path.join(config["library"], song_name + "." + song_file.split(".")[-1])
+        new_song = os.path.join(
+            config["library"], song_name + "." + song_file.split(".")[-1]
+        )
         with open(new_song, "wb") as f2:
             f2.write(f.read())
     # load metadata into the mp3 file (post write, because mutagen doesn't like writing to open files)
-    tags = TinyTag.get(os.path.join(config["library"], song_name + "." + song_file.split(".")[-1]))
+    tags = TinyTag.get(
+        os.path.join(config["library"], song_name + "." + song_file.split(".")[-1])
+    )
     tags.artist = artist
     tags.album = album
     # save the metadata (mutagen)
@@ -171,29 +231,36 @@ def index(song_file):
         muta = mutagen.File(new_song)
     except mutagen.mp3.HeaderNotFoundError:
         log.log(Error(f"Unable to read file '{song_name}' due to Bad Header."))
-        print(f"Unable to read file '{song_name}', is it a valid mp3 file? try playing it with an external player.")
+        print(
+            f"Unable to read file '{song_name}', is it a valid mp3 file? try playing it with an external player."
+        )
         return
-    muta["TPE1"] = mutagen.id3.TPE1(encoding=3, text=[u"{}".format(artist)])
-    muta["TALB"] = mutagen.id3.TALB(encoding=3, text=[u"{}".format(album)])
-    muta["TIT2"] = mutagen.id3.TIT2(encoding=3, text=[u"{}".format(song_name)])
-    muta["TDRC"] = mutagen.id3.TDRC(encoding=3, text=[u"{}".format(tags.year)])
-    muta["TCON"] = mutagen.id3.TCON(encoding=3, text=[u"{}".format(tags.genre)])
+    muta["TPE1"] = mutagen.id3.TPE1(encoding=3, text=["{}".format(artist)])
+    muta["TALB"] = mutagen.id3.TALB(encoding=3, text=["{}".format(album)])
+    muta["TIT2"] = mutagen.id3.TIT2(encoding=3, text=["{}".format(song_name)])
+    muta["TDRC"] = mutagen.id3.TDRC(encoding=3, text=["{}".format(tags.year)])
+    muta["TCON"] = mutagen.id3.TCON(encoding=3, text=["{}".format(tags.genre)])
 
     log.log(Debug(f"Values: {artist}, {album}, {song_name}, {year}, {genre}"))
 
     muta.save()
 
     log.log(Info(f"File '{song_name}' copied to library."))
-    index_file(config["library"], str(os.path.join(config["library"], song_name + "." + song_file.split(".")[-1])))
+    index_file(
+        config["library"],
+        str(
+            os.path.join(config["library"], song_name + "." + song_file.split(".")[-1])
+        ),
+    )
     print(f"File '{song_name}' copied to library.")
 
 
 def reformat():
     """reformat all audio files in the library according to the index"""
     cleanup()  # clean up the library first (remove ghost files)
-    conn = sqlite3.connect(os.path.join(config["library"], 'index.db'))
+    conn = sqlite3.connect(os.path.join(config["library"], "index.db"))
     c = conn.cursor()
-    c.execute('SELECT * FROM songs')
+    c.execute("SELECT * FROM songs")
     songs = c.fetchall()
 
     for song in songs:
@@ -216,32 +283,36 @@ def reformat():
         with open("debug.txt", "w") as f:
             f.write(str(song))
         # set title
-        muta["TIT2"] = mutagen.id3.TIT2(encoding=3, text=[u"{}".format(song[2])])
+        muta["TIT2"] = mutagen.id3.TIT2(encoding=3, text=["{}".format(song[2])])
         # set artist
-        muta["TPE1"] = mutagen.id3.TPE1(encoding=3, text=[u"{}".format(song[3])])
+        muta["TPE1"] = mutagen.id3.TPE1(encoding=3, text=["{}".format(song[3])])
         # set album
-        muta["TALB"] = mutagen.id3.TALB(encoding=3, text=[u"{}".format(song[4])])
+        muta["TALB"] = mutagen.id3.TALB(encoding=3, text=["{}".format(song[4])])
         # set year
-        muta["TDRC"] = mutagen.id3.TDRC(encoding=3, text=[u"{}".format(song[7])])
+        muta["TDRC"] = mutagen.id3.TDRC(encoding=3, text=["{}".format(song[7])])
         # set genre
-        muta["TCON"] = mutagen.id3.TCON(encoding=3, text=[u"{}".format(song[6])])
+        muta["TCON"] = mutagen.id3.TCON(encoding=3, text=["{}".format(song[6])])
         muta.save()
         log.log(Info(f"File '{song[2]}' reformatted."))
         # update the index (song paths)
-        c.execute("""
+        c.execute(
+            """
         UPDATE songs
         SET path = ?
         WHERE id = ?
-        """, (new_path, song[0]))
+        """,
+            (new_path, song[0]),
+        )
         conn.commit()
     conn.close()
     log.log(Info("All songs reformatted."))
 
+
 def cleanup():
     """clean up the library, ghost files, etc."""
-    conn = sqlite3.connect(os.path.join(config["library"], 'index.db'))
+    conn = sqlite3.connect(os.path.join(config["library"], "index.db"))
     c = conn.cursor()
-    c.execute('SELECT * FROM songs')
+    c.execute("SELECT * FROM songs")
     songs = c.fetchall()
 
     for song in songs:
@@ -250,14 +321,14 @@ def cleanup():
                 pass
         except FileNotFoundError:
             log.log(Warn(f"File '{song[2]}' not found, removing from index."))
-            c.execute('DELETE FROM songs WHERE id = ?', (song[0],))
+            c.execute("DELETE FROM songs WHERE id = ?", (song[0],))
 
     # remove any files that are not in the index
     for root, _, files in os.walk(config["library"]):
         for file in files:
             if file.endswith(".mp3"):
                 path = os.path.join(root, file)
-                c.execute('SELECT * FROM songs WHERE path = ?', (path,))
+                c.execute("SELECT * FROM songs WHERE path = ?", (path,))
                 if c.fetchone() is None:
                     log.log(Warn(f"File '{path}' not in index, removing."))
                     os.remove(path)
@@ -269,13 +340,20 @@ def cleanup():
     conn.close()
     log.log(Info("Library cleaned up."))
 
+
 def edit_tags(id: int):
     """edit the tags of a song"""
-    conn = sqlite3.connect(os.path.join(config["library"], 'index.db'))
+    conn = sqlite3.connect(os.path.join(config["library"], "index.db"))
     c = conn.cursor()
-    c.execute('SELECT * FROM songs WHERE id = ?', (id,))
+    c.execute("SELECT * FROM songs WHERE id = ?", (id,))
     song = c.fetchone()
-    new_title, new_artist, new_album, new_year, new_genre = song[2], song[3], song[4], song[7], song[6]  # get the current values
+    new_title, new_artist, new_album, new_year, new_genre = (
+        song[2],
+        song[3],
+        song[4],
+        song[7],
+        song[6],
+    )  # get the current values
     if song is None:
         log.log(Warn(f"Song with id '{id}' not found."))
         print("Song not found.")
@@ -284,146 +362,185 @@ def edit_tags(id: int):
     print("Leave blank to keep the current value.")
     stop = False
     inquirer_edit_options = [
-        inquirer.List("edit_option", message="What would you like to edit?", choices=["Title", "Artist", "Album", "Year", "Genre", "Stop Editing"])
+        inquirer.List(
+            "edit_option",
+            message="What would you like to edit?",
+            choices=["Title", "Artist", "Album", "Year", "Genre", "Stop Editing"],
+        )
     ]
     while not stop:
         edit_option = inquirer.prompt(inquirer_edit_options)["edit_option"]
         if edit_option == "Title":
-            new_title = input(f"Enter the new title for '{song[2]}' (leave blank to keep '{song[2]}'): ")
+            new_title = input(
+                f"Enter the new title for '{song[2]}' (leave blank to keep '{song[2]}'): "
+            )
             if new_title == "":
                 new_title = song[2]
         elif edit_option == "Artist":
-            new_artist = input(f"Enter the new artist for '{song[2]}' (leave blank to keep '{song[3]}'): ")
+            new_artist = input(
+                f"Enter the new artist for '{song[2]}' (leave blank to keep '{song[3]}'): "
+            )
             if new_artist == "":
                 new_artist = song[3]
         elif edit_option == "Album":
-            new_album = input(f"Enter the new album for '{song[2]}' (leave blank to keep '{song[4]}'): ")
+            new_album = input(
+                f"Enter the new album for '{song[2]}' (leave blank to keep '{song[4]}'): "
+            )
             if new_album == "":
                 new_album = song[4]
         elif edit_option == "Year":
-            new_year = input(f"Enter the new year for '{song[2]}' (leave blank to keep '{song[7]}'): ")
+            new_year = input(
+                f"Enter the new year for '{song[2]}' (leave blank to keep '{song[7]}'): "
+            )
             if new_year == "":
                 new_year = song[7]
         elif edit_option == "Genre":
-            new_genre = input(f"Enter the new genre for '{song[2]}' (leave blank to keep '{song[6]}'): ")
+            new_genre = input(
+                f"Enter the new genre for '{song[2]}' (leave blank to keep '{song[6]}'): "
+            )
             if new_genre == "":
                 new_genre = song[6]
         elif edit_option == "Stop Editing":
             stop = True
-    log.log(Debug(f"New values: {new_title}, {new_artist}, {new_album}, {new_year}, {new_genre}"))
+    log.log(
+        Debug(
+            f"New values: {new_title}, {new_artist}, {new_album}, {new_year}, {new_genre}"
+        )
+    )
     # update the index
-    c.execute("""
+    c.execute(
+        """
     UPDATE songs
     SET title = ?, artist = ?, album = ?, year = ?, genre = ?
     WHERE id = ?
-    """, (new_title, new_artist, new_album, new_year, new_genre, id))
+    """,
+        (new_title, new_artist, new_album, new_year, new_genre, id),
+    )
     conn.commit()
     conn.close()
     log.log(Info(f"Song '{song[2]}' edited."))
     print(f"Song '{song[2]}' edited.")
     reformat()  # reformat the library to apply changes
 
+
 def create_playlist(name: str, songs: list):
     """create a playlist"""
-    conn = sqlite3.connect(os.path.join(config["library"], 'index.db'))
+    conn = sqlite3.connect(os.path.join(config["library"], "index.db"))
     c = conn.cursor()
-    c.execute('SELECT * FROM playlists WHERE name = ?', (name,))
+    c.execute("SELECT * FROM playlists WHERE name = ?", (name,))
     if c.fetchone() is not None:
         log.log(Warn(f"Playlist '{name}' already exists."))
         print(f"Playlist '{name}' already exists.")
         return
-    c.execute('INSERT INTO playlists (name) VALUES (?)', (name,))
+    c.execute("INSERT INTO playlists (name) VALUES (?)", (name,))
     conn.commit()
-    c.execute('SELECT * FROM playlists WHERE name = ?', (name,))
+    c.execute("SELECT * FROM playlists WHERE name = ?", (name,))
     playlist_id = c.fetchone()[0]
     for song in songs:
-        c.execute('INSERT INTO playlist_songs (playlist_id, song_id) VALUES (?, ?)', (playlist_id, song[0]))
+        c.execute(
+            "INSERT INTO playlist_songs (playlist_id, song_id) VALUES (?, ?)",
+            (playlist_id, song[0]),
+        )
         conn.commit()
     conn.close()
     log.log(Info(f"Playlist '{name}' created."))
 
+
 def delete_playlist(playlist: tuple):
     """delete a playlist"""
-    conn = sqlite3.connect(os.path.join(config["library"], 'index.db'))
+    conn = sqlite3.connect(os.path.join(config["library"], "index.db"))
     c = conn.cursor()
-    c.execute('DELETE FROM playlists WHERE id = ?', (playlist[0],))
+    c.execute("DELETE FROM playlists WHERE id = ?", (playlist[0],))
     conn.commit()
     conn.close()
     log.log(Info(f"Playlist '{playlist[1]}' deleted."))
 
+
 def list_playlists():
     """list all playlists"""
-    conn = sqlite3.connect(os.path.join(config["library"], 'index.db'))
+    conn = sqlite3.connect(os.path.join(config["library"], "index.db"))
     c = conn.cursor()
-    c.execute('SELECT * FROM playlists')
+    c.execute("SELECT * FROM playlists")
     playlists = c.fetchall()
     conn.close()
     return playlists
 
+
 def list_playlist(playlist: tuple):
     """list all songs in a playlist"""
-    conn = sqlite3.connect(os.path.join(config["library"], 'index.db'))
+    conn = sqlite3.connect(os.path.join(config["library"], "index.db"))
     c = conn.cursor()
-    c.execute('SELECT * FROM playlist_songs WHERE playlist_id = ?', (playlist[0],))
+    c.execute("SELECT * FROM playlist_songs WHERE playlist_id = ?", (playlist[0],))
     songs = c.fetchall()
     song_data = []
     for song in songs:
-        c.execute('SELECT * FROM songs WHERE id = ?', (song[1],))
+        c.execute("SELECT * FROM songs WHERE id = ?", (song[1],))
         song_info = c.fetchone()
         song_data.append(song_info)
     conn.close()
     return song_data
 
+
 def add_to_playlist(playlist: tuple, song: tuple):
     """add a song to a playlist"""
-    conn = sqlite3.connect(os.path.join(config["library"], 'index.db'))
+    conn = sqlite3.connect(os.path.join(config["library"], "index.db"))
     c = conn.cursor()
-    c.execute('INSERT INTO playlist_songs (playlist_id, song_id) VALUES (?, ?)', (playlist[0], song[0]))
+    c.execute(
+        "INSERT INTO playlist_songs (playlist_id, song_id) VALUES (?, ?)",
+        (playlist[0], song[0]),
+    )
     conn.commit()
     conn.close()
     log.log(Info(f"Song '{song}' added to playlist '{playlist[1]}'."))
 
+
 def remove_from_playlist(playlist: tuple, song: tuple):
     """remove a song from a playlist"""
-    conn = sqlite3.connect(os.path.join(config["library"], 'index.db'))
+    conn = sqlite3.connect(os.path.join(config["library"], "index.db"))
     c = conn.cursor()
-    c.execute('DELETE FROM playlist_songs WHERE playlist_id = ? AND song_id = ?', (playlist[0], song[0]))
+    c.execute(
+        "DELETE FROM playlist_songs WHERE playlist_id = ? AND song_id = ?",
+        (playlist[0], song[0]),
+    )
     conn.commit()
     conn.close()
     log.log(Info(f"Song '{song}' removed from playlist '{playlist[1]}'."))
 
+
 def edit_playlist_name(playlist: tuple, new_name: str):
     """edit a playlist"""
-    conn = sqlite3.connect(os.path.join(config["library"], 'index.db'))
+    conn = sqlite3.connect(os.path.join(config["library"], "index.db"))
     c = conn.cursor()
-    c.execute('UPDATE playlists SET name = ? WHERE id = ?', (new_name, playlist[0]))
+    c.execute("UPDATE playlists SET name = ? WHERE id = ?", (new_name, playlist[0]))
     conn.commit()
     conn.close()
     log.log(Info(f"Playlist '{playlist[1]}' edited to '{new_name}'."))
 
+
 def get_playlist_contents(playlist: tuple):
     """get the contents of a playlist"""
-    conn = sqlite3.connect(os.path.join(config["library"], 'index.db'))
+    conn = sqlite3.connect(os.path.join(config["library"], "index.db"))
     c = conn.cursor()
     if playlist is None:
         log.log(Warn(f"Playlist '{playlist[1]}' not found."))
         print(f"Playlist '{playlist[1]}' not found.")
         return
-    c.execute('SELECT * FROM playlist_songs WHERE playlist_id = ?', (playlist[0],))
+    c.execute("SELECT * FROM playlist_songs WHERE playlist_id = ?", (playlist[0],))
     songs = c.fetchall()
     song_data = []
     for song in songs:
-        c.execute('SELECT * FROM songs WHERE id = ?', (song[1],))
+        c.execute("SELECT * FROM songs WHERE id = ?", (song[1],))
         song_info = c.fetchone()
         song_data.append(song_info)
     conn.close()
     return song_data
 
+
 def search_playlist(name: str):
     """search for the data of a playlist"""
-    conn = sqlite3.connect(os.path.join(config["library"], 'index.db'))
+    conn = sqlite3.connect(os.path.join(config["library"], "index.db"))
     c = conn.cursor()
-    c.execute('SELECT * FROM playlists WHERE name LIKE ?', (name,))
+    c.execute("SELECT * FROM playlists WHERE name LIKE ?", (name,))
     playlist = c.fetchall()
     conn.close()
     # if multiple playlists, ask the user to choose
@@ -432,7 +549,11 @@ def search_playlist(name: str):
         for p in playlist:
             playlists.append(p[1])
         inquirer_questions = [
-            inquirer.List("playlist", message="Which playlist would you like to choose?", choices=playlists)
+            inquirer.List(
+                "playlist",
+                message="Which playlist would you like to choose?",
+                choices=playlists,
+            )
         ]
         playlist = inquirer.prompt(inquirer_questions)["playlist"]
         return playlist

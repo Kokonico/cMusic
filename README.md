@@ -96,7 +96,25 @@ to control the music when it's not in the background, you can use the following 
 - `cmusic playlist add <name> <song>(s)` to add a Song to a playlist.
 - `cmusic playlist remove <name> <song>(s)` to remove a Song from a playlist.
 - `cmusic playlist delete <name>` to delete a playlist.
+- `cmusic playlist list` to list all the playlists.
+- `cmusic playlist list <name)` to list all the Songs in a playlist.
+- `cmusic play <playlist name> --playlist` to play a playlist.
 
+## Development setup
+
+To set up the development environment, you need to have Poetry and python 3.12+ installed on your system.
+
+```sh
+git clone https://github.com/kokonico/cmusic
+cd cmusic
+poetry install
+```
+
+to install the player so you can use it in the terminal, you can use the following command.
+
+```sh
+poetry run pip install .
+```
 
 ## License
 

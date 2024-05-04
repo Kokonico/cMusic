@@ -39,6 +39,11 @@ config = json.load(open(CONFIG_FILE))
 LIBRARY = config["library"]
 CRASH_FOLDER = os.path.join(CMUSIC_DIR, "crashes")
 
+# create library directory
+if not os.path.exists(LIBRARY):
+    os.makedirs(LIBRARY)
+    MAIN.log(Info("Created library directory"))
+
 MAIN.log(Info("Constants OK"))
 
 MAIN.set_output_file(LOG_FILE, preserve_old_messages=True)

@@ -13,7 +13,7 @@ CMUSIC_DIR = os.path.join(os.path.expanduser("~"), ".cmusic")
 CONFIG_FILE = os.path.join(CMUSIC_DIR, "config.json")
 
 LOG_FILE = os.path.join(CMUSIC_DIR, "cmusic.log")
-MAIN = objlog.LogNode("CMUSIC", log_file=LOG_FILE)
+MAIN = objlog.LogNode("CMUSIC")
 
 DEFAULT_CONFIG = {
     "library": os.path.join(os.path.expanduser("~"), "cMusic Library"),
@@ -40,3 +40,5 @@ LIBRARY = config["library"]
 CRASH_FOLDER = os.path.join(CMUSIC_DIR, "crashes")
 
 MAIN.log(Info("Constants OK"))
+
+MAIN.set_output_file(LOG_FILE, preserve_old_messages=True)

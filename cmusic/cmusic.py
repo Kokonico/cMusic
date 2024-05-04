@@ -6,7 +6,7 @@ import os
 # prevent pygame support prompt (must do before importing anything from pygame)
 os.environ["PYGAME_HIDE_SUPPORT_PROMPT"] = "1"
 
-import constants
+from . import constants
 
 from objlog.LogMessages import Debug, Info, Warn, Error, Fatal
 from . import main as central

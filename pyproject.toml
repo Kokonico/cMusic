@@ -1,6 +1,6 @@
 [tool.poetry]
 name = "cmusic"
-version = "1.0.2"
+version = "1.0.3"
 description = "the CLI music player"
 authors = ["Kokonico <kokonico@duck.com>"]
 readme = "README.md"

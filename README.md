@@ -16,6 +16,8 @@ cmusic is available on PyPI, so you can install it using pip.
 pip install cmusic
 ```
 
+(please make sure that your python scripts directory is in your PATH)
+
 or you can install it from the source code.
 
 ```sh
@@ -110,7 +112,7 @@ cd cmusic
 poetry install
 ```
 
-to install the player so you can use it in the terminal, you can use the following command.
+to install the player to use it in the terminal, you can use the following command.
 
 ```sh
 poetry run pip install .

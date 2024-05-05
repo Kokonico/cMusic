@@ -38,8 +38,24 @@ brew install cmusic
 
 ## Usage
 
+Cmusic currently only supports mp3 files. To use the player, you need to index the songs you want to play first.
+
 ```sh
-# play a Song (must be in the current directory, you can ignore file extensions)
+# index a song
+cmusic index <Song File>
+```
+
+example:
+
+```sh
+cmusic index "path/to/song.mp3"
+```
+
+it will walk you through the process of indexing the song.
+
+to play a song, you can use the following command, the name of the song should be the same as the one you set when indexing the song.
+
+```sh
 cmusic play <Song> [--loop] [--shuffle]
 
 ```
@@ -78,6 +94,7 @@ to control the music when it's not in the background, you can use the following 
 
 ### commands
 
+- `cmusic index <Song File>` to index a Song
 - `cmusic list` to list all the songs in the library.
 - `cmusic play <Song>` to play a Song.
 - `cmusic version` to display the version of the player.
@@ -107,7 +124,7 @@ to control the music when it's not in the background, you can use the following 
 To set up the development environment, you need to have Poetry and python 3.12+ installed on your system.
 
 ```sh
-git clone https://github.com/kokonico/cmusic
+git clone https://github.com/Kokonico/cmusic
 cd cmusic
 poetry install
 ```

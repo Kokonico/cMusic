@@ -452,6 +452,8 @@ def delete_playlist(playlist: tuple):
     c = conn.cursor()
     c.execute("DELETE FROM playlists WHERE id = ?", (playlist[0],))
     conn.commit()
+    # delete all songs in the playlist
+    c.execute("DELETE FROM playlist_songs WHERE playlist_id = ?", (playlist[0],))
     conn.close()
     log.log(Info(f"Playlist '{playlist[1]}' deleted."))
 
@@ -522,8 +524,8 @@ def get_playlist_contents(playlist: tuple):
     conn = sqlite3.connect(os.path.join(config["library"], "index.db"))
     c = conn.cursor()
     if playlist is None:
-        log.log(Warn(f"Playlist '{playlist[1]}' not found."))
-        print(f"Playlist '{playlist[1]}' not found.")
+        log.log(Warn(f"Playlist not found."))
+        print(f"Playlist not found.")
         return
     c.execute("SELECT * FROM playlist_songs WHERE playlist_id = ?", (playlist[0],))
     songs = c.fetchall()

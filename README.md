@@ -124,7 +124,7 @@ to control the music when it's not in the background, you can use the following 
 To set up the development environment, you need to have Poetry and python 3.12+ installed on your system.
 
 ```sh
-git clone https://github.com/Kokonico/cmusic
+git clone https://github.com/Kokonico/cMusic
 cd cmusic
 poetry install
 ```

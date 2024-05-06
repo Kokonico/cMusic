@@ -55,8 +55,6 @@ it will walk you through the process of indexing the song.
 
 to select options to change, use arrow keys to navigate and space to select.
 
-```sh
-
 to play a song, you can use the following command, the name of the song should be the same as the one you set when indexing the song.
 
 ```sh

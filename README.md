@@ -21,7 +21,7 @@ pip install cmusic
 or you can install it from the source code.
 
 ```sh
-git clone
+git clone https://github.com/Kokonico/cMusic
 cd cmusic
 pip install .
 ```

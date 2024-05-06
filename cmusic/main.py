@@ -1,7 +1,7 @@
 """main internals for cmusic"""
 
-__version__ = "1.0.0"
-extra = "Alpha"
+__version__ = "1.0.6"
+extra = "Stable"
 
 import os
 import subprocess

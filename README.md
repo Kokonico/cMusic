@@ -118,8 +118,8 @@ to control the music when it's not in the background, you can use the following 
 - `cmusic playlist remove <name> <song>(s)` to remove a Song from a playlist.
 - `cmusic playlist delete <name>` to delete a playlist.
 - `cmusic playlist list` to list all the playlists.
-- `cmusic playlist list <name)` to list all the Songs in a playlist.
-- `cmusic play <playlist name> --playlist` to play a playlist.
+- `cmusic playlist list <name>)` to list all the Songs in a playlist.
+- `cmusic play <playlist <name> --playlist` to play a playlist.
 
 ## Development setup
 

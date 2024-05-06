@@ -21,7 +21,7 @@ pip install cmusic
 or you can install it from the source code.
 
 ```sh
-git clone
+git clone https://github.com/Kokonico/cMusic
 cd cmusic
 pip install .
 ```
@@ -55,8 +55,6 @@ it will walk you through the process of indexing the song.
 
 to select options to change, use arrow keys to navigate and space to select.
 
-```sh
-
 to play a song, you can use the following command, the name of the song should be the same as the one you set when indexing the song.
 
 ```sh
@@ -64,7 +62,7 @@ cmusic play <Song> [--loop] [--shuffle]
 
 ```
 
-pssst, you can also pass multiple Songs to play them in a row._
+_pssst, you can also pass multiple Songs to play them in a row._
 
 ```sh
 cmusic play <Song1> <Song2> <Song3> ...
@@ -120,8 +118,8 @@ to control the music when it's not in the background, you can use the following 
 - `cmusic playlist remove <name> <song>(s)` to remove a Song from a playlist.
 - `cmusic playlist delete <name>` to delete a playlist.
 - `cmusic playlist list` to list all the playlists.
-- `cmusic playlist list <name)` to list all the Songs in a playlist.
-- `cmusic play <playlist name> --playlist` to play a playlist.
+- `cmusic playlist list <name>)` to list all the Songs in a playlist.
+- `cmusic play <playlist <name> --playlist` to play a playlist.
 
 ## Development setup
 

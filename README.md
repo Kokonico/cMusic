@@ -62,7 +62,7 @@ cmusic play <Song> [--loop] [--shuffle]
 
 ```
 
-pssst, you can also pass multiple Songs to play them in a row._
+_pssst, you can also pass multiple Songs to play them in a row._
 
 ```sh
 cmusic play <Song1> <Song2> <Song3> ...

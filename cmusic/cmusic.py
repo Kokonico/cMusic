@@ -27,6 +27,10 @@ except ImportError as e:
     MAIN.print = False
     exit(1)
 
+def is_running_in_wsl():
+    # Check for WSL-specific environment variable
+    if "WSL_DISTRO_NAME" in os.environ:
+        return True
 
 def main():
     # verify the OS (to make sure it's supported)
@@ -47,6 +51,56 @@ def main():
                 )
                 exit(1)
         case "posix":
+            if is_running_in_wsl():
+                if os.environ.get("CMUSIC_WSL_IGNORE") == "true":
+                    MAIN.log(Info("WSL detected, but user has chosen to ignore it."))
+                else:
+                    MAIN.log(Warn("WSL detected, there will be issues if not properly configured!"))
+                    result = input("Warning: you have been detected to be running in WSL, which will not work if not configured properly. \
+                     do you want to continue? (you won't be asked this again if you do!) (y/n): ")
+                    if result.lower() != "y":
+                        exit(1)
+                    else:
+                        os.environ["CMUSIC_WSL_IGNORE"] = "true"
+                        pulse_setup = input("would you like to try to automatically configure pulseaudio? (y/n): ")
+                        if pulse_setup.lower() == "y":
+                            print("Installing PulseAudio...")
+                            subprocess.run(["sudo", "apt-get", "update"], check=True)
+                            subprocess.run(["sudo", "apt-get", "install", "-y", "pulseaudio"], check=True)
+                            print("PulseAudio installed.")
+                            print("Configuring PulseAudio server...")
+                            print("Configuring PULSE_SERVER environment variable...")
+                            host_ip = subprocess.run(["grep", "nameserver", "/etc/resolv.conf"], capture_output=True,
+                                                     text=True).stdout.split()[1]
+                            with open(os.path.expanduser("~/.bashrc"), "a") as bashrc:
+                                bashrc.write(f'\nexport PULSE_SERVER=tcp:{host_ip}\n')
+                            print("PULSE_SERVER environment variable configured.")
+                            print("All Done!")
+                            # clear shell
+                            os.system("clear")
+                            print("WHAT TO DO NEXT:")
+                            print("1: Download and install PulseAudio for Windows from https://www.freedesktop.org/wiki/Software/PulseAudio/Ports/Windows/Support/ (if you haven't already)")
+                            print("2. (ON WINDOWS) Edit your default.pa within your pulse directory to load the TCP module with your local network.")
+                            print("3. (ON WINDOWS) Edit your daemon.conf within your pulse directory and set 'exit-idle-time' to -1.")
+                            print("4. (ON WINDOWS) Start Pulseaudio using bin\\pulseaudio.exe")
+                            print("5. (ON WINDOWS) restart your WSL environment.")
+                            print("these instructions have been saved to ~/cmusic_pulseaudio_instructions.txt")
+                            with open(os.path.expanduser("~/cmusic_pulseaudio_instructions.txt"), "w") as f:
+                                f.write("WHAT TO DO NEXT:\n")
+                                f.write("1: Download and install PulseAudio for Windows from https://www.freedesktop.org/wiki/Software/PulseAudio/Ports/Windows/Support/ (if you haven't already)\n")
+                                f.write("2. (ON WINDOWS) Edit your default.pa within your pulse directory to load the TCP module with your local network.\n")
+                                f.write("3. (ON WINDOWS) Edit your daemon.conf within your pulse directory and set 'exit-idle-time' to -1.\n")
+                                f.write("4. (ON WINDOWS) Start Pulseaudio using bin\\pulseaudio.exe\n")
+                                f.write("5. (ON WINDOWS) restart your WSL environment.\n")
+                            exit(1)
+
+                        else:
+                            print("Please configure PulseAudio manually if you haven't already, the program will "
+                                  "start normally next time.")
+                            exit(1)
+
+
+
             MAIN.log(Info("Detected POSIX OS, should work fine."))
         case _:
             MAIN.log(Warn("Unknown OS, here be dragons."))

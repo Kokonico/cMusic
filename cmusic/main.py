@@ -1,7 +1,7 @@
 """main internals for cmusic"""
 
 __version__ = "1.0.8"
-extra = "Stable"
+extra = "WSL Test Build"
 
 import os
 import subprocess

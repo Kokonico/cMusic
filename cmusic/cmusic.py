@@ -153,6 +153,11 @@ def main():
         help="Search for a playlist instead of a song.",
         action="store_true",
     )
+    parser.add_argument(
+        "--_crash",
+        help="crash the program for testing purposes",
+        action="store_true",
+    )
     args = parser.parse_args()
     args = vars(args)
     try:
@@ -164,6 +169,7 @@ def main():
         MAIN.print = True
         MAIN.log(Fatal(f"Oh No, cMusic has crashed!"))
         MAIN.log(Info(f"Crash log saved to {CRASH_FOLDER}"))
+        MAIN.log(Info(("Press any key to exit...")))
         MAIN.print = False
         MAIN.log(e)
         MAIN.log(Error(f"Traceback: \n{traceback.format_exc()}"))
@@ -172,3 +178,5 @@ def main():
                 CRASH_FOLDER, f"crash_{time.strftime('%Y-%m-%d_%H-%M-%S')}.log"
             )
         )
+        # wait for any key press
+        input()

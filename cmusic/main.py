@@ -1,6 +1,6 @@
 """main internals for cmusic"""
 
-__version__ = "1.0.7"
+__version__ = "1.0.8"
 extra = "Stable"
 
 import os
@@ -24,6 +24,9 @@ from tinytag import TinyTag
 
 def main(args: dict):
     """Main function for cMusic."""
+
+    if args["_crash"] and args["command"] != "play":
+        raise Exception("Manual Crash Triggered.")
 
     indexlib.init_index(LIBRARY)
 
@@ -88,6 +91,8 @@ def main(args: dict):
                 MAIN.log(Info("Background process started, peace out."))
                 return
             MAIN.log(Info("Starting cMusic (for real this time)"))
+            if args["_crash"]:
+                raise Exception("Manual Crash Triggered.")
 
             # check if --playlist was provided
             if args["playlist"]:

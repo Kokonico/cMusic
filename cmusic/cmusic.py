@@ -53,9 +53,7 @@ def main():
             print("Unknown OS, here be dragons.")
 
     # assure tmux is installed
-    tmux_check = subprocess.run(
-        ["tmux", "-V"], stdout=subprocess.PIPE, stderr=subprocess.PIPE
-    )
+    tmux_check = subprocess.run(["tmux", "-V"], stdout=subprocess.PIPE, stderr=subprocess.PIPE)
     if tmux_check.returncode != 0:
         # tmux isn't installed
         MAIN.log(Warn("tmux is not installed."))
@@ -69,7 +67,7 @@ def main():
         if specific_os == "Darwin":
             MAIN.log(
                 Info(
-                    "macOS (superior OS) detected, requesting installation of tmux via Homebrew."
+                    "macOS detected, requesting installation of tmux via Homebrew."
                 )
             )
             tmux_install = input("Would you like to install tmux via Homebrew? (y/n): ")

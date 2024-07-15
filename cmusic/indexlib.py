@@ -134,15 +134,11 @@ def search_index(library_file: str, search_term: str):
     )
     return c.fetchall()
 
-
-def index(song_file):
+def tag_edit(song_file: str):
     if not os.path.exists(song_file):
-        log.log(Warn(f"File '{song_file}' not found."))
-        print("File not found.")
-        return
+        raise FileNotFoundError(f"File '{song_file}' not found.")
     if not song_file.endswith(".mp3"):
-        log.log(Warn("Non mp3 files have not been tested, here be dragons."))
-        print("Non mp3 files have not been tested, here be dragons.")
+        raise TypeError(f"File '{song_file}' is not an mp3 file.")
     # get the song name
     tags = TinyTag.get(song_file)
     song_name = tags.title
@@ -194,8 +190,7 @@ def index(song_file):
             stop = True
         elif what_to_edit == "Cancel":
             log.log(Info("User cancelled song editing."))
-            print("Not indexing song.")
-            return
+            return None
         # update the questions
         log.log(Debug(f"Values: {song_name}, {artist}, {album}, {year}, {genre}"))
         inquirer_questions = [
@@ -212,6 +207,27 @@ def index(song_file):
                 ],
             ),
         ]
+    return song_name, artist, album, year, genre
+
+
+def index(song_file):
+    """index a single song"""
+    try:
+        data = tag_edit(song_file)
+    except TypeError:
+        print("the file you are trying to index is not an mp3 file.")
+        return
+    except FileNotFoundError:
+        print("the file you are trying to index does not exist.")
+        return
+    if data is None:
+        print("Not indexing song.")
+        return
+    song_name = data[0]
+    artist = data[1]
+    album = data[2]
+    year = data[3]
+    genre = data[4]
     # copy the file to the library
     log.log(Info(f"Copying '{song_file}' to library..."))
     with open(song_file, "rb") as f:
@@ -280,8 +296,6 @@ def reformat():
         # rename the file
         os.rename(song[1], new_path)
         muta = mutagen.File(new_path)
-        with open("debug.txt", "w") as f:
-            f.write(str(song))
         # set title
         muta["TIT2"] = mutagen.id3.TIT2(encoding=3, text=["{}".format(song[2])])
         # set artist
@@ -347,61 +361,28 @@ def edit_tags(id: int):
     c = conn.cursor()
     c.execute("SELECT * FROM songs WHERE id = ?", (id,))
     song = c.fetchone()
-    new_title, new_artist, new_album, new_year, new_genre = (
-        song[2],
-        song[3],
-        song[4],
-        song[7],
-        song[6],
-    )  # get the current values
     if song is None:
-        log.log(Warn(f"Song with id '{id}' not found."))
+        log.log(Error(f"Song not found."))
         print("Song not found.")
         return
-    print(f"Editing song '{song[2]}'")
-    print("Leave blank to keep the current value.")
-    stop = False
-    inquirer_edit_options = [
-        inquirer.List(
-            "edit_option",
-            message="What would you like to edit?",
-            choices=["Title", "Artist", "Album", "Year", "Genre", "Stop Editing"],
-        )
-    ]
-    while not stop:
-        edit_option = inquirer.prompt(inquirer_edit_options)["edit_option"]
-        if edit_option == "Title":
-            new_title = input(
-                f"Enter the new title for '{song[2]}' (leave blank to keep '{song[2]}'): "
-            )
-            if new_title == "":
-                new_title = song[2]
-        elif edit_option == "Artist":
-            new_artist = input(
-                f"Enter the new artist for '{song[2]}' (leave blank to keep '{song[3]}'): "
-            )
-            if new_artist == "":
-                new_artist = song[3]
-        elif edit_option == "Album":
-            new_album = input(
-                f"Enter the new album for '{song[2]}' (leave blank to keep '{song[4]}'): "
-            )
-            if new_album == "":
-                new_album = song[4]
-        elif edit_option == "Year":
-            new_year = input(
-                f"Enter the new year for '{song[2]}' (leave blank to keep '{song[7]}'): "
-            )
-            if new_year == "":
-                new_year = song[7]
-        elif edit_option == "Genre":
-            new_genre = input(
-                f"Enter the new genre for '{song[2]}' (leave blank to keep '{song[6]}'): "
-            )
-            if new_genre == "":
-                new_genre = song[6]
-        elif edit_option == "Stop Editing":
-            stop = True
+    else:
+        log.log(Info(f"Editing song '{song[2]}'..."))
+    try:
+        editvalues = tag_edit(song[1])
+    except TypeError:
+        print("the file you are trying to edit is not an mp3 file.")
+        return
+    except FileNotFoundError:
+        print("the file you are trying to edit does not exist.")
+        return
+    if editvalues is None:
+        print("Not editing song.")
+        return
+    new_title = editvalues[0]
+    new_artist = editvalues[1]
+    new_album = editvalues[2]
+    new_year = editvalues[3]
+    new_genre = editvalues[4]
     log.log(
         Debug(
             f"New values: {new_title}, {new_artist}, {new_album}, {new_year}, {new_genre}"

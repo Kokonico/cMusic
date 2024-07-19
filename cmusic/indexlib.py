@@ -115,6 +115,8 @@ def index_file(library_file: str, file: str):
         ),
     )
     conn.commit()
+    id = c.lastrowid
+    None_to_null(id) # just for cleanliness
     conn.close()
 
 
@@ -318,8 +320,39 @@ def reformat():
             (new_path, song[0]),
         )
         conn.commit()
+        None_to_null(song[0])
     conn.close()
     log.log(Info("All songs reformatted."))
+
+def None_to_null(songid: int):
+    """takes any strings that are None and converts them to a null value"""
+    conn = sqlite3.connect(os.path.join(config["library"], "index.db"))
+    c = conn.cursor()
+    c.execute("SELECT * FROM songs WHERE id = ?", (songid,))
+    song = list(c.fetchone())
+    if song is None:
+        log.log(Error(f"Song not found."))
+        print("Song not found.")
+        return
+    else:
+        log.log(Info(f"Converting NULL values to null for song '{song[2]}'..."))
+    for index, field in enumerate(song):
+        if field == "None":
+            song[index] = None
+
+    # update the index
+    c.execute(
+        """
+    UPDATE songs
+    SET title = ?, artist = ?, album = ?, year = ?, genre = ?
+    WHERE id = ?
+    """,
+        (song[2], song[3], song[4], song[7], song[6], songid),
+    )
+    conn.commit()
+    conn.close()
+    log.log(Info(f"Song '{song[2]}' edited."))
+    print(f"Song '{song[2]}' edited.")
 
 
 def cleanup():

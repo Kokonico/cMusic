@@ -6,6 +6,7 @@ import tinytag
 import sqlite3
 import mutagen
 import mutagen.id3
+from pkg_resources import safe_name
 from tinytag import TinyTag
 
 import inquirer
@@ -230,23 +231,19 @@ def index(song_file):
     album = data[2]
     year = data[3]
     genre = data[4]
+    song_path = os.path.join(config["library"], safe(song_name) + "." + song_file.split(".")[-1])
     # copy the file to the library
     log.log(Info(f"Copying '{song_file}' to library..."))
     with open(song_file, "rb") as f:
-        new_song = os.path.join(
-            config["library"], song_name + "." + song_file.split(".")[-1]
-        )
-        with open(new_song, "wb") as f2:
+        with open(song_path, "wb") as f2:
             f2.write(f.read())
     # load metadata into the mp3 file (post write, because mutagen doesn't like writing to open files)
-    tags = TinyTag.get(
-        os.path.join(config["library"], song_name + "." + song_file.split(".")[-1])
-    )
+    tags = TinyTag.get(song_path)
     tags.artist = artist
     tags.album = album
     # save the metadata (mutagen)
     try:
-        muta = mutagen.File(new_song)
+        muta = mutagen.File(song_path)
     except mutagen.mp3.HeaderNotFoundError:
         log.log(Error(f"Unable to read file '{song_name}' due to Bad Header."))
         print(
@@ -264,12 +261,7 @@ def index(song_file):
     muta.save()
 
     log.log(Info(f"File '{song_name}' copied to library."))
-    index_file(
-        config["library"],
-        str(
-            os.path.join(config["library"], song_name + "." + song_file.split(".")[-1])
-        ),
-    )
+    index_file(config["library"], str(song_path))
     print(f"File '{song_name}' copied to library.")
 
 

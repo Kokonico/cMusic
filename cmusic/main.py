@@ -126,19 +126,21 @@ def main(args: dict):
             # play the songs
             if not songs:
                 MAIN.log(Warn("No songs found to play."))
+                os.system("clear")
                 print("No songs found to play.")
-                return
-            try:
-                while True:
-                    for song in songs:
-                        play(song[1], song, args["loop"], args["shuffle"], config)
-                    if not args["loop"]:
-                        break
-            except (
-                KeyboardInterrupt
-            ):  # catch the KeyboardInterrupt so the program can exit
-                MAIN.log(Info("User shutdown Program"))
-                print("User shutdown Program")
+                input("Press enter to continue.")
+            else:
+                try:
+                    while True:
+                        for song in songs:
+                            play(song[1], song, args["loop"], args["shuffle"], config)
+                        if not args["loop"]:
+                            break
+                except (
+                    KeyboardInterrupt
+                ):  # catch the KeyboardInterrupt so the program can exit
+                    MAIN.log(Info("User shutdown Program"))
+                    print("User shutdown Program")
 
         case "index":
             # add a file to the library

@@ -167,7 +167,7 @@ def main():
         MAIN.print = True
         MAIN.log(Fatal(f"Oh No, cMusic has crashed!"))
         MAIN.log(Info(f"Crash log saved to {CRASH_FOLDER}"))
-        MAIN.log(Info(("Press any key to exit...")))
+        MAIN.log(Info(("Press enter to exit...")))
         MAIN.print = False
         MAIN.log(e)
         MAIN.log(Error(f"Traceback: \n{traceback.format_exc()}"))

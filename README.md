@@ -101,6 +101,7 @@ to control the music when it's not in the background, you can use the following 
 - `cmusic play <Song>` to play a Song.
 - `cmusic version` to display the version of the player.
 - `cmusic search <query>` to search for Songs in the library.
+- `cmusic del <Song>` to delete a song.
 
 <!-- comment this out for now until I implement it. -->
 

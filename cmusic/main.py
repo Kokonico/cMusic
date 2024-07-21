@@ -1,6 +1,6 @@
 """main internals for cmusic"""
 
-__version__ = "1.0.9"
+__version__ = "1.1.0"
 extra = "Stable"
 
 import os
@@ -271,7 +271,9 @@ def main(args: dict):
                 "be up to 1000 lines)? (y/n): "
             )
             if are_you_sure.lower() == "y":
-                MAIN.dump_messages_to_console(None)
+                with open(MAIN.log_file, "r") as f:
+                    for line in f.readlines():
+                        print(line.strip())
                 MAIN.wipe_messages(wipe_logfiles=True)
                 print("Log flushed.")
                 MAIN.log(Info("Log flushed."))
@@ -376,6 +378,40 @@ def main(args: dict):
                         MAIN.log(Warn("Playlist name must be provided."))
                         print("Playlist name must be provided.")
                         return
+        case "del":
+            # delete a song from the library
+            try:
+                song = scan_library(args["args"][0])
+            except IndexError:
+                MAIN.log(Warn("Song name must be provided."))
+                print("Song name must be provided.")
+                return
+            if song is None:
+                MAIN.log(Warn(f"Could not find song '{args['args'][0]}' in library."))
+                print(f"Could not find song '{args['args'][0]}' in library.")
+                return
+            if isinstance(song, list):
+                print("Are you sure you want to delete the following songs?")
+                for s in song:
+                    print(
+                        f"{s[2]} by {s[3]} {f'({s[4]})' if s[4] not in [None, 'None'] else ''}"
+                    )
+                are_you_sure = input("y/n: ")
+                if are_you_sure.lower() == "y":
+                    MAIN.log(Info("Multiple songs found, deleting all."))
+                    for s in song:
+                        indexlib.delete_song(s)
+                else:
+                    print("Aborted.")
+                    return
+            else:
+                print(
+                    f"Are you sure you want to delete '{song[2]} by {song[3]} {f'({song[4]})' if song[4] not in [None, 'None'] else ''}'?"
+                )
+                are_you_sure = input("y/n: ")
+                if are_you_sure.lower() == "y":
+                    MAIN.log(Info("Deleting song."))
+                    indexlib.delete_song(song)
 
 
 def scan_library(songname):

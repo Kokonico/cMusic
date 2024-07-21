@@ -115,6 +115,7 @@ def main():
             "info",
             "flush",
             "playlist",
+            "del",
         ],
     )
     parser.add_argument("args", help="Arguments for the command.", nargs="*")

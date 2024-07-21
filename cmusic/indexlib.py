@@ -571,3 +571,22 @@ def search_playlist(name: str):
         return
     else:
         return playlist[0]
+
+
+def delete_song(song):
+    """delete a song from the cmusic library"""
+    conn = sqlite3.connect(os.path.join(config["library"], "index.db"))
+    c = conn.cursor()
+    c.execute("SELECT * FROM songs WHERE id = ?", (song[0],))
+    song = c.fetchone()
+    if song is None:
+        log.log(Error(f"Song not found."))
+        print("Song not found.")
+        return
+    else:
+        log.log(Info(f"Deleting song '{song[2]}'..."))
+    c.execute("DELETE FROM songs WHERE id = ?", (song[0],))
+    conn.commit()
+    os.remove(song[1])
+    conn.close()
+    log.log(Info(f"Song '{song[2]}' deleted."))

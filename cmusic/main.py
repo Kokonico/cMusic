@@ -110,9 +110,6 @@ def main(args: dict):
                 MAIN.log(Info(f"Playlist '{args['args'][0]}' found, playing songs."))
                 args["args"] = [song[2] for song in songs]
 
-            if args["shuffle"]:
-                # shuffle the songs (args.args)
-                random.shuffle(args["args"])
             # convert the song names to paths & data (tuple)
             songs = [scan_library(song) for song in args["args"] if song is not None]
             # remove any None values from the list
@@ -122,6 +119,9 @@ def main(args: dict):
                 if isinstance(song, list):
                     songs += song
                     songs.remove(song)
+
+            if args["shuffle"]:
+                random.shuffle(songs)
 
             # play the songs
             if not songs:

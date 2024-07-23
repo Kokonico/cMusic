@@ -143,12 +143,15 @@ def main(args: dict):
                             MAIN.log(Debug(songs))
                         for song in songs:
                             play(song[1], song, args["loop"], args["shuffle"], config)
-                            songs.remove(song)
+                            if not args["loop"]:
+                                songs.remove(song)
                             with open(QUEUE_FILE) as f:
                                 new = json.load(f)
                                 for stored in new:
                                     if stored == song:
                                         new.remove(stored)
+                                        if args["loop"]:
+                                            new.append(stored)
                                         with open(QUEUE_FILE, "w") as f:
                                             json.dump(new, f)
                                         break

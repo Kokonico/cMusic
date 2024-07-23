@@ -15,7 +15,7 @@ MAIN = central.MAIN
 try:
     import argparse
     import subprocess
-    from .constants import CRASH_FOLDER
+    from cmusic.constants import CRASH_FOLDER
 
     import traceback
     import time

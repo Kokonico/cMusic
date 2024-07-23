@@ -20,7 +20,6 @@ QUEUE_FILE = os.path.join(CMUSIC_DIR, "queue.json")
 DEFAULT_CONFIG = {
     "library": os.path.join(os.path.expanduser("~"), "cMusic Library"),
     "volume": 100,
-    "queue": QUEUE_FILE
 }
 
 # check if the cmusic directory exists

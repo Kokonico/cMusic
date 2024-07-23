@@ -65,9 +65,9 @@ def main(args: dict):
                 MAIN.log(Debug(f"flags: {flags}"))
 
                 constructed_command = (
-                    ["tmux", "new-session", "-d", "-s", "cmusic_background", "cmusic"]
-                    + args
-                    + flags
+                        ["tmux", "new-session", "-d", "-s", "cmusic_background", "cmusic"]
+                        + args
+                        + flags
                 )
 
                 MAIN.log(Debug(f"Running command: {constructed_command}"))
@@ -119,6 +119,7 @@ def main(args: dict):
                 if isinstance(song, list):
                     songs += song
                     songs.remove(song)
+            songs = [list(song) for song in songs]
 
             if args["shuffle"]:
                 random.shuffle(songs)
@@ -130,14 +131,32 @@ def main(args: dict):
                 print("No songs found to play.")
                 input("Press enter to continue.")
             else:
+                # load songs into queue
+                with open(QUEUE_FILE, "w+") as f:
+                    MAIN.log(Debug(songs))
+                    json.dump(songs, f)
                 try:
+                    # TODO: make more readable
                     while True:
+                        with open(QUEUE_FILE) as f:
+                            songs = json.load(f)
+                            MAIN.log(Debug(songs))
                         for song in songs:
                             play(song[1], song, args["loop"], args["shuffle"], config)
-                        if not args["loop"]:
+                            songs.remove(song)
+                            with open(QUEUE_FILE) as f:
+                                new = json.load(f)
+                                for stored in new:
+                                    if stored == song:
+                                        new.remove(stored)
+                                        with open(QUEUE_FILE, "w") as f:
+                                            json.dump(new, f)
+                                        break
+
+                        if not args["loop"] and len(new) <= 0:
                             break
                 except (
-                    KeyboardInterrupt
+                        KeyboardInterrupt
                 ):  # catch the KeyboardInterrupt so the program can exit
                     MAIN.log(Info("User shutdown Program"))
                     print("User shutdown Program")
@@ -384,22 +403,16 @@ def main(args: dict):
             songs = [song for song in songs if song is not None]
             for song in songs:
 
-
-
                 if isinstance(song, list):
                     songs += song
                     songs.remove(song)
             songs = [list(song) for song in songs]
-            print("songs", songs)
             with open(QUEUE_FILE, "r") as f:
                 current = json.load(f)
             with open(QUEUE_FILE, "w") as f:
                 for song in songs:
                     current.append(song)
                 json.dump(current, f)
-
-
-
 
         case "del":
             # delete a song from the library
@@ -573,7 +586,7 @@ def draw_interface(tags, song_data, looped, shuffle):
 
 
 def play(
-    song_path, song_data, looped, shuffle, config
+        song_path, song_data, looped, shuffle, config
 ):  # will error if config is not passed, idk why
     """play a song."""
     # get the song path

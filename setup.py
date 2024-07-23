@@ -8,5 +8,5 @@ setup(
     author_email='kokonico@duck.com',
     packages=['cmusic'],  #same as name
     install_requires=['objlog', 'pygame', 'tinytag', 'mutagen', 'inquirer'],
-    scripts=["cmusic/__main__.py"]
+    scripts=["cmusic/cmusic"]
 )

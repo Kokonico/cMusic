@@ -6,10 +6,10 @@ import os
 # prevent pygame support prompt (must do before importing anything from pygame)
 os.environ["PYGAME_HIDE_SUPPORT_PROMPT"] = "1"
 
-from . import constants
+from cmusic import constants
 
 from objlog.LogMessages import Debug, Info, Warn, Error, Fatal
-from . import main as central
+from cmusic import main as central
 
 MAIN = central.MAIN
 try:
@@ -180,3 +180,5 @@ def main():
         )
         # wait for any key press
         input()
+
+main()

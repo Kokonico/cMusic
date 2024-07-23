@@ -15,5 +15,5 @@ mutagen = "^1.47.0"
 inquirer = "^3.2.4"
 
 [build-system]
-requires = ["poetry-core"]
+requires = []
 build-backend = "poetry.core.masonry.api"

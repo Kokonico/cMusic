@@ -116,6 +116,7 @@ def main():
             "flush",
             "playlist",
             "del",
+            "queue"
         ],
     )
     parser.add_argument("args", help="Arguments for the command.", nargs="*")

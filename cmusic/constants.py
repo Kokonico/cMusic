@@ -15,9 +15,12 @@ CONFIG_FILE = os.path.join(CMUSIC_DIR, "config.json")
 LOG_FILE = os.path.join(CMUSIC_DIR, "cmusic.log")
 MAIN = objlog.LogNode("CMUSIC")
 
+QUEUE_FILE = os.path.join(CMUSIC_DIR, "queue.json")
+
 DEFAULT_CONFIG = {
     "library": os.path.join(os.path.expanduser("~"), "cMusic Library"),
     "volume": 100,
+    "queue": QUEUE_FILE
 }
 
 # check if the cmusic directory exists
@@ -29,6 +32,11 @@ if not os.path.exists(CONFIG_FILE):
     with open(CONFIG_FILE, "w") as f:
         f.write(json.dumps(DEFAULT_CONFIG, indent=4))
     MAIN.log(Info("Created config file"))
+
+if not os.path.exists(QUEUE_FILE):
+    MAIN.log(Info("generating queue file"))
+    with open(QUEUE_FILE, "w") as f:
+        json.dump([], f)
 
 # create crashes directory
 if not os.path.exists(os.path.join(CMUSIC_DIR, "crashes")):
@@ -43,6 +51,8 @@ CRASH_FOLDER = os.path.join(CMUSIC_DIR, "crashes")
 if not os.path.exists(LIBRARY):
     os.makedirs(LIBRARY)
     MAIN.log(Info("Created library directory"))
+
+# queue file
 
 MAIN.log(Info("Constants OK"))
 

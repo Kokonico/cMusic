@@ -9,7 +9,7 @@ import subprocess
 # local package imports
 from . import indexlib
 from . import bg_threads
-from .constants import MAIN, config, CONFIG_FILE, LIBRARY
+from .constants import MAIN, config, CONFIG_FILE, LIBRARY, QUEUE_FILE
 
 import math
 import random
@@ -378,6 +378,29 @@ def main(args: dict):
                         MAIN.log(Warn("Playlist name must be provided."))
                         print("Playlist name must be provided.")
                         return
+        case "queue":
+            # queue a song to play after
+            songs = [scan_library(song) for song in args["args"]]
+            songs = [song for song in songs if song is not None]
+            for song in songs:
+
+
+
+                if isinstance(song, list):
+                    songs += song
+                    songs.remove(song)
+            songs = [list(song) for song in songs]
+            print("songs", songs)
+            with open(QUEUE_FILE, "r") as f:
+                current = json.load(f)
+            with open(QUEUE_FILE, "w") as f:
+                for song in songs:
+                    current.append(song)
+                json.dump(current, f)
+
+
+
+
         case "del":
             # delete a song from the library
             try:

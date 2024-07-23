@@ -6,7 +6,6 @@ import tinytag
 import sqlite3
 import mutagen
 import mutagen.id3
-from pkg_resources import safe_name
 from tinytag import TinyTag
 
 import inquirer

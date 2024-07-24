@@ -68,8 +68,8 @@ class KeyHandler(threading.Thread):
                                 stderr=subprocess.PIPE,
                                 stdout=subprocess.PIPE,
                             )
-                        case "q":
-                            # stop the song
+                        case "s":
+                            # skip the song
                             self.MAIN.log(Info("Stopping the song."))
                             pygame.mixer.music.stop()
                             self.stop_flag.set()

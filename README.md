@@ -89,7 +89,7 @@ note: if you want to return to the player, you can use `cmusic c`
 
 to control the music when it's not in the background, you can use the following keys:
 - `space` to pause/play the Song.
-- `q` to quit the player.
+- `s` to skip the current song
 - `shift + (+)` to increase the volume.
 - `shift + (-)` to decrease the volume.
 - `e` to enter background mode.

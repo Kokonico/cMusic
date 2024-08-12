@@ -6,6 +6,9 @@ import os
 # prevent pygame support prompt (must do before importing anything from pygame)
 os.environ["PYGAME_HIDE_SUPPORT_PROMPT"] = "1"
 
+# Limbo /// Climax
+# Clair De Lune
+
 from cmusic import constants
 
 from objlog.LogMessages import Debug, Info, Warn, Error, Fatal
@@ -15,7 +18,6 @@ MAIN = central.MAIN
 try:
     import argparse
     import subprocess
-    from cmusic.constants import CRASH_FOLDER
 
     import traceback
     import time
@@ -27,6 +29,14 @@ except ImportError as e:
     MAIN.print = False
     exit(1)
 
+try:
+    from cmusic.constants import CRASH_FOLDER
+except ImportError:
+    MAIN.print = True
+    MAIN.log(Fatal("Failed to import internal module: constants"))
+    MAIN.log(Error("Please check the integrity of the installation"))
+    MAIN.print = False
+    exit(1)
 
 def main():
     # verify the OS (to make sure it's supported)

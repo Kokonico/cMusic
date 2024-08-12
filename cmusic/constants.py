@@ -8,6 +8,9 @@ from objlog.LogMessages import Info, Debug
 
 # the path to the config file
 
+# GREED /// CLIMAX
+# Clair De Soleil
+
 CMUSIC_DIR = os.path.join(os.path.expanduser("~"), ".cmusic")
 
 CONFIG_FILE = os.path.join(CMUSIC_DIR, "config.json")

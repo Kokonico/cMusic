@@ -15,6 +15,9 @@ from .constants import config
 import objlog
 from objlog.LogMessages import Debug, Info, Warn, Error, Fatal
 
+# HERESY /// CLIMAX
+# AESTHETICS OF HATE
+
 log = objlog.LogNode(
     "INDEXER", log_file=os.path.join(os.path.expanduser("~"), ".cmusic", "cmusic.log")
 )

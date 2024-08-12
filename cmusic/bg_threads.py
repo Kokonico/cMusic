@@ -16,6 +16,8 @@ from objlog.LogMessages import Info, Error
 
 from objlog import LogNode
 
+# GLUTTONY /// CLIMAX
+# In The Flesh
 
 class KeyHandler(threading.Thread):
     """Handles key presses for cmusic in the background."""

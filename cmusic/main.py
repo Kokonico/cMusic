@@ -6,6 +6,9 @@ extra = "Stable"
 # VIOLENCE /// CLIMAX
 # ...Like Antennas To Heaven
 
+# this is the main file for cMusic, it contains the main function that is called when the program is run.
+# make sure to add any new commands to the case statement in the main function.
+
 import os
 import subprocess
 

@@ -9,6 +9,10 @@ os.environ["PYGAME_HIDE_SUPPORT_PROMPT"] = "1"
 # Limbo /// Climax
 # Clair De Lune
 
+# this is the entry point for cMusic, this is the script that is run when the user runs `cmusic` in the terminal.
+# it is responsible for parsing the arguments and running the correct command.
+# it also handles some basic error handling and logging.
+
 from cmusic import constants
 
 from objlog.LogMessages import Debug, Info, Warn, Error, Fatal
@@ -40,6 +44,7 @@ except ImportError:
 
 def main():
     # verify the OS (to make sure it's supported)
+    # PS: if your adding support for a new OS, please make sure to change this code to reflect that.
     os_name = os.name
     match os_name:
         case "nt":
@@ -108,6 +113,8 @@ def main():
             exit(1)
 
     parser = argparse.ArgumentParser(description="cMusic, for all your music needs.")
+    # arguments
+    # if you add a new command, make sure to add it to the choices list or it won't work.
     parser.add_argument(
         "command",
         help="The command to run.",

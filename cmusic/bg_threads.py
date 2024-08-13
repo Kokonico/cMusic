@@ -19,8 +19,13 @@ from objlog import LogNode
 # GLUTTONY /// CLIMAX
 # In The Flesh
 
+# file for background threads, such as the key handler
+
 class KeyHandler(threading.Thread):
     """Handles key presses for cmusic in the background."""
+    # this controls the volume, pausing, and skipping of songs
+    # it also allows the user to detach the tmux session and stop the song
+    # it detects key presses by reading from stdin
 
     def __init__(self, is_bg: bool = False):
         super(KeyHandler, self).__init__()

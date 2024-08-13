@@ -18,6 +18,10 @@ from objlog.LogMessages import Debug, Info, Warn, Error, Fatal
 # HERESY /// CLIMAX
 # AESTHETICS OF HATE
 
+# this file is used for song management, such as indexing, searching, etc.
+# it uses sqlite3 for the database, and tinytag for reading the tags of the songs
+# if you want to add more functionality, feel free to do so, but make sure to document it properly
+
 log = objlog.LogNode(
     "INDEXER", log_file=os.path.join(os.path.expanduser("~"), ".cmusic", "cmusic.log")
 )
@@ -51,7 +55,7 @@ def init_index(library_file: str):
 
 
 def index_library(library_file: str):
-    """index a library of songs, and store the information in a file for easier lookup"""
+    """creates a new library or re-index an existing one"""
     if os.path.exists(os.path.join(library_file, "index.db")):
         log.log(Warn("Library already indexed, deleting old index"))
         os.remove(os.path.join(library_file, "index.db"))
@@ -90,7 +94,7 @@ def index_library(library_file: str):
 
 
 def index_file(library_file: str, file: str):
-    """index a single file"""
+    """index a single song file"""
     conn = sqlite3.connect(os.path.join(library_file, "index.db"))
     c = conn.cursor()
     # create table to link tags to file paths
@@ -124,7 +128,7 @@ def index_file(library_file: str, file: str):
 
 
 def search_index(library_file: str, search_term: str):
-    """search the index for a song"""
+    """search the index within a library for a song"""
     conn = sqlite3.connect(os.path.join(library_file, "index.db"))
     c = conn.cursor()
     c.execute(
@@ -140,6 +144,7 @@ def search_index(library_file: str, search_term: str):
     return c.fetchall()
 
 def tag_edit(song_file: str):
+    """Allows the user to edit the tags of a song"""
     if not os.path.exists(song_file):
         raise FileNotFoundError(f"File '{song_file}' not found.")
     if not song_file.endswith(".mp3"):
@@ -216,7 +221,7 @@ def tag_edit(song_file: str):
 
 
 def index(song_file):
-    """index a single song"""
+    """index a single song and allow the user to edit the info"""
     try:
         data = tag_edit(song_file)
     except TypeError:

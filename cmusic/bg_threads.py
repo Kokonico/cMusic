@@ -21,6 +21,8 @@ from objlog import LogNode
 
 # file for background threads, such as the key handler
 
+# TODO: detect F8 key press to stop the song
+
 class KeyHandler(threading.Thread):
     """Handles key presses for cmusic in the background."""
     # this controls the volume, pausing, and skipping of songs

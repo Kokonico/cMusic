@@ -85,7 +85,7 @@ def main(args: dict):
                     print(
                         f"Failed to Initiate song playback. ({tmux.stderr.decode('utf-8')})"
                     )
-                    return
+                    exit(0)
                 subprocess.run(
                     ["tmux", "detach", "-t", "cmusic_background"],
                     stderr=subprocess.PIPE,
@@ -95,7 +95,7 @@ def main(args: dict):
                     MAIN.log(Info("Pulling session to foreground."))
                     pull_session("cmusic_background")
                 MAIN.log(Info("Background process started, peace out."))
-                return
+                exit(0)
             MAIN.log(Info("Starting cMusic (for real this time)"))
             if args["_crash"]:
                 raise Exception("Manual Crash Triggered.")
@@ -107,12 +107,12 @@ def main(args: dict):
                 if playlist is None:
                     MAIN.log(Warn(f"Playlist '{args['args'][0]}' not found."))
                     print(f"Playlist '{args['args'][0]}' not found.")
-                    return
+                    exit(1)
                 songs = indexlib.get_playlist_contents(playlist)
                 if songs is None:
                     MAIN.log(Warn(f"Playlist '{args['args'][0]}' is empty."))
                     print(f"Playlist '{args['args'][0]}' is empty.")
-                    return
+                    exit(1)
                 MAIN.log(Info(f"Playlist '{args['args'][0]}' found, playing songs."))
                 args["args"] = [song[2] for song in songs]
 
@@ -169,6 +169,7 @@ def main(args: dict):
                 ):  # catch the KeyboardInterrupt so the program can exit
                     MAIN.log(Info("User shutdown Program"))
                     print("User shutdown Program")
+                    exit(0)
 
         case "index":
             # add a file to the library

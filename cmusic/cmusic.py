@@ -29,7 +29,7 @@ except ImportError as e:
     MAIN.print = True
     MAIN.log(Fatal("Failed to import required module: " + str(e)))
     MAIN.log(e)
-    MAIN.log(Error("Please install the required modules by running 'poetry install'"))
+    MAIN.log(Error("Please install the required modules by running 'pip install'"))
     MAIN.print = False
     exit(1)
 
@@ -37,7 +37,7 @@ try:
     from cmusic.constants import CRASH_FOLDER
 except ImportError:
     MAIN.print = True
-    MAIN.log(Fatal("Failed to import internal module: constants"))
+    MAIN.log(Fatal("Failed to import internal variable: constants -> CRASH_FOLDER"))
     MAIN.log(Error("Please check the integrity of the installation"))
     MAIN.print = False
     exit(1)
@@ -111,6 +111,9 @@ def main():
                 "tmux is not installed, please install it via your package manager or add it to your PATH."
             )
             exit(1)
+        else:
+            MAIN.log(Warn("Unable to determine OS, please install tmux manually."))
+            print("Unable to determine OS, please install tmux manually.")
 
     parser = argparse.ArgumentParser(description="cMusic, for all your music needs.")
     # arguments
@@ -178,6 +181,7 @@ def main():
     args = parser.parse_args()
     args = vars(args)
     try:
+
         central.main(args)
     except KeyboardInterrupt:
         MAIN.log(Info("User shutdown Program"))
@@ -198,4 +202,5 @@ def main():
         # wait for any key press
         input()
 
-main()
+if __name__ == "__main__":
+    main()

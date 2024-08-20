@@ -1,7 +1,7 @@
 """main internals for cmusic"""
 
 __version__ = "1.2.0"
-extra = "Stable"
+extra = "Beta Release"
 
 # VIOLENCE /// CLIMAX
 # ...Like Antennas To Heaven
@@ -423,6 +423,12 @@ def main(args: dict):
                 for song in songs:
                     current.append(song)
                 json.dump(current, f)
+            MAIN.log(Info(f"Queued {len(songs)} songs."))
+            for song in songs:
+                print(
+                    f"Queued '{song[2]} by {song[3]} {f'({song[4]})' if song[4] not in [None, 'None'] else ''}'"
+                )
+
 
         case "del":
             # delete a song from the library
@@ -679,4 +685,6 @@ def pull_session(session_name):
     )
     subprocess.run(["tmux", "set", "-g", "status", "off"], stderr=subprocess.PIPE)
     subprocess.run(["tmux", "attach", "-t", session_name], stderr=subprocess.PIPE)
+    # reset the status bar
     subprocess.run(["tmux", "set", "-g", "status", f"{status}"], stderr=subprocess.PIPE)
+

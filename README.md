@@ -1,12 +1,23 @@
 # cMusic
 > A simple CLI music player written in Python.
 
-PS: it's recommended to use the GitHub monaspace font(s) with ligatures enabled to use the player, but it's not required.
-
-Also, there's a bug in pygame's mixer that causes the music to do strange things when paused for an extended period of time, so I recommend not pausing the music for too long (12 hours or more). I can't really do anything about it, so you'll have to deal with it.
-
 ## NOTICE
 Although this player can play any audio file, *I do not condone piracy.* Please only use this player to play music that you own or have the rights to play. By using this player, you agree to take full responsibility for any legal consequences that may arise from your use of this player.
+
+## Table of Contents
+- [Notice](#notice)
+- [Requirements](#requirements)
+- [Installation](#installation)
+- [Usage](#usage)
+  - [Music Controls](#music-controls)
+  - [Commands](#commands)
+    - [Background Mode Commands](#background-mode-commands)
+    - [Playlist Commands](#playlist-commands)
+
+## Requirements
+- Python 3.12+ & dependencies (should be installed automatically)
+- poetry
+- tmux
 
 ## Installation
 
@@ -23,10 +34,10 @@ or you can install it from the source code.
 ```sh
 git clone https://github.com/Kokonico/cMusic
 cd cmusic
-pip install .
+pip3.12 install .
 ```
 
-<!-- also not implemented yet. -->
+<!-- not implemented yet. -->
 <!--
 or if you're on macOS, you can use Homebrew to install it.
 

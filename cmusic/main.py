@@ -143,7 +143,7 @@ def main(args: dict):
                     json.dump(songs, f)
                 try:
                     # TODO: make more readable
-                    while True:
+                    while True:  # we want to loop through the songs indefinitely (unless loop is set to False)
                         with open(QUEUE_FILE) as f:
                             songs = json.load(f)
                             MAIN.log(Debug(songs))
@@ -156,11 +156,12 @@ def main(args: dict):
                                 for stored in new:
                                     if stored == song:
                                         new.remove(stored)
+                                        # if loop is on, add the song back to the queue at the end
                                         if args["loop"]:
-                                            new.append(stored)
-                                        with open(QUEUE_FILE, "w") as f:
-                                            json.dump(new, f)
-                                        break
+                                            new.append(song)
+                                with open(QUEUE_FILE, "w") as f:
+                                    json.dump(new, f)
+                                break
 
                         if not args["loop"] and len(new) <= 0:
                             break
@@ -426,7 +427,7 @@ def main(args: dict):
             MAIN.log(Info(f"Queued {len(songs)} songs."))
             for song in songs:
                 print(
-                    f"Queued '{song[2]} by {song[3]} {f'({song[4]})' if song[4] not in [None, 'None'] else ''}'"
+                    f"Queued {song[2]} by {song[3]} {f'({song[4]})' if song[4] not in [None, 'None'] else ''}"
                 )
 
 

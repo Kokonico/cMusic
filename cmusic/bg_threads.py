@@ -21,7 +21,7 @@ from objlog import LogNode
 
 # file for background threads, such as the key handler
 
-# TODO: detect F8 key press to stop the song
+# TODO: detect media keys to control the music
 
 class KeyHandler(threading.Thread):
     """Handles key presses for cmusic in the background."""

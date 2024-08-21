@@ -1,8 +1,13 @@
 # TODOs and bug tracking
 - [x] fix all commands executing themselves twice
-  - status: Identifying the issue
+  - status: Fixed
   - Notes
     - It appears that it is executing the entire `main()` function within `main.py` twice, per the log.
     - Issue found: `main()` is being called twice due to `cmusic.py` executing it when imported.
     - Issue fixed, `main()` is now only called when `__name__ == '__main__'`
-- [ ] fix using `cmusic play <song> --loop` and then `cmusic queue <song>` causing only the latest queued song to loop
+- [x] fix using `cmusic play <song> --loop` and then `cmusic queue <song>` causing whatever song originally played to keep looping and not using both songs.
+  - status: Fixed
+  - Notes
+    - Issue appears to not involve the `queue` command, but rather the `play` command itself.'
+    - issue found: the `queue.json` file is not moving the song just played to the back of the queue. It is instead keeping it at the front.
+    -  Issue fixed, the song is now moved to the back of the queue, causing the next song to play, and the previous song to play after that, and so on.

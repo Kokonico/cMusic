@@ -22,6 +22,8 @@ from objlog import LogNode
 # file for background threads, such as the key handler
 
 # TODO: detect media keys to control the music
+# TODO: multiplatform support for key detection (this implementation is POSIX (mac & linux) only, no windows support)
+# still need to figure out how to do this without blocking the main thread (without posix)
 
 class KeyHandler(threading.Thread):
     """Handles key presses for cmusic in the background."""

@@ -1,7 +1,7 @@
 """main internals for cmusic"""
 
 __version__ = "1.2.0"
-extra = "Beta Release"
+extra = "Stable"
 
 # VIOLENCE /// CLIMAX
 # ...Like Antennas To Heaven

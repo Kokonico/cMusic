@@ -1,13 +1,15 @@
-# TODOs and bug tracking
-- [x] fix all commands executing themselves twice
-  - status: Fixed
-  - Notes
-    - It appears that it is executing the entire `main()` function within `main.py` twice, per the log.
-    - Issue found: `main()` is being called twice due to `cmusic.py` executing it when imported.
-    - Issue fixed, `main()` is now only called when `__name__ == '__main__'`
-- [x] fix using `cmusic play <song> --loop` and then `cmusic queue <song>` causing whatever song originally played to keep looping and not using both songs.
-  - status: Fixed
-  - Notes
-    - Issue appears to not involve the `queue` command, but rather the `play` command itself.'
-    - issue found: the `queue.json` file is not moving the song just played to the back of the queue. It is instead keeping it at the front.
-    -  Issue fixed, the song is now moved to the back of the queue, causing the next song to play, and the previous song to play after that, and so on.
+# TODOs for 2.0.0
+## Bug Tracking
+- No known bugs
+## QOL
+- [ ] make command autofilling more user-friendly, **ESPECIALLY** for playlists
+## Features
+- [ ] Implement SOFA support for spatial audio
+- [ ] Implement support for more audio formats (wav, m4a, ogg)
+- [ ] Equalizer support (change through config file)
+- [ ] Audio Normalization
+- [ ] Multi-language support
+- [ ] discord RPC
+- [ ] improved search (sql `LIKE` is not a great search method)
+- [ ] Lyrics support _(line by line maybe?)_
+- [ ] crossfade between songs (song transitions)

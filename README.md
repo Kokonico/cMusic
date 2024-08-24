@@ -142,12 +142,6 @@ cd cmusic
 poetry install
 ```
 
-to install the player to use it in the terminal, you can use the following command.
-
-```sh
-poetry run pip install .
-```
-
 ## License
 
 This project is licensed under the Zlib License. See the [LICENSE](LICENSE) file for details.

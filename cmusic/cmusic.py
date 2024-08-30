@@ -13,6 +13,8 @@ os.environ["PYGAME_HIDE_SUPPORT_PROMPT"] = "1"
 # it is responsible for parsing the arguments and running the correct command.
 # it also handles some basic error handling and logging.
 
+# TODO: better argument auto-completion
+
 from cmusic import constants
 
 from objlog.LogMessages import Debug, Info, Warn, Error, Fatal
@@ -22,14 +24,15 @@ MAIN = central.MAIN
 try:
     import argparse
     import subprocess
-
+    import readline
     import traceback
     import time
 except ImportError as e:
     MAIN.print = True
-    MAIN.log(Fatal("Failed to import required module: " + str(e)))
+    MAIN.log(Fatal("Failed to import required python module: " + str(e)))
     MAIN.log(e)
-    MAIN.log(Error("Please install the required modules by running 'pip install'"))
+    MAIN.log(Error("If you have compiled python from source, make sure all dependencies are installed and recompile, "
+                   "otherwise your python installation may be corrupt/out of version."))
     MAIN.print = False
     exit(1)
 

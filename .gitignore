@@ -168,3 +168,4 @@ dmypy.json
 .pytype/
 cython_debug/
 poetry.lock
+System Volume Information/

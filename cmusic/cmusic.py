@@ -3,6 +3,9 @@
 
 import os
 
+from decorator import n_args
+from z3 import unknown
+
 # prevent pygame support prompt (must do before importing anything from pygame)
 os.environ["PYGAME_HIDE_SUPPORT_PROMPT"] = "1"
 
@@ -118,71 +121,73 @@ def main():
             MAIN.log(Warn("Unable to determine OS, please install tmux manually."))
             print("Unable to determine OS, please install tmux manually.")
 
+    # this may break everything
+    # god take the wheel
     parser = argparse.ArgumentParser(description="cMusic, for all your music needs.")
-    # arguments
-    # if you add a new command, make sure to add it to the choices list or it won't work.
-    parser.add_argument(
-        "command",
-        help="The command to run.",
-        choices=[
-            "play",
-            "index",
-            "version",
-            "list",
-            "search",
-            "c",
-            "p",
-            "v",
-            "q",
-            "edit",
-            "info",
-            "flush",
-            "playlist",
-            "del",
-            "queue"
-        ],
-    )
-    parser.add_argument("args", help="Arguments for the command.", nargs="*")
+    command_subparsers = parser.add_subparsers(dest="command", help="The command to run.", required=True)
+
+    command_subparsers.add_parser("play", help="Play a song.")
+    command_subparsers.add_parser("index", help="Index the music library.")
+    command_subparsers.add_parser("version", help="Show version information.")
+    command_subparsers.add_parser("list", help="List songs.")
+    command_subparsers.add_parser("search", help="Search for a song.")
+    command_subparsers.add_parser("c", help="Connect to the background session.")
+    command_subparsers.add_parser("p", help="Pause the background session.")
+    command_subparsers.add_parser("v", help="Change the volume of the background session.")
+    command_subparsers.add_parser("q", help="Quit the background session.")
+    command_subparsers.add_parser("edit", help="Edit a song.")
+    command_subparsers.add_parser("info", help="Show song information.")
+    command_subparsers.add_parser("flush", help="Flush the logs.")
+    command_subparsers.add_parser("del", help="Delete a song.")
+    command_subparsers.add_parser("queue", help="Add a song to queue")
+
+    playlist_parser = command_subparsers.add_parser("playlist", help="Manage playlists.")
+    playlist_subparsers = playlist_parser.add_subparsers(dest="playlist_command", help="The playlist command to "
+                                                                                       "execute.")
+    playlist_subparsers.required = True
+    playlist_parser.required = False  # we don't need to require the playlist command, it's just a single command
+    # that can be run.
+
+    playlist_subparsers.add_parser("create", help="Create a new playlist.")
+    playlist_subparsers.add_parser("delete", help="Delete a playlist.")
+    playlist_subparsers.add_parser("add", help="Add a song to a playlist.")
+    playlist_subparsers.add_parser("remove", help="Remove a song from a playlist.")
+    playlist_subparsers.add_parser("list", help="List all playlists or a playlist's songs if it is fed a name.")
+
+    # flags
+
     parser.add_argument("--loop", help="Loops the song if set", action="store_true")
-    parser.add_argument(
-        "--shuffle", help="Shuffles the songs if set", action="store_true"
-    )
-    parser.add_argument(
-        "--background",
-        help="Makes the song play, but doesn't stop you from controlling the "
-        "terminal.",
-        action="store_true",
-    )
-    parser.add_argument(
-        "--reindex", help="Re-index the whole library", action="store_true"
-    )
-    parser.add_argument(
-        "--reformat",
-        help="Reformat the library, actually edits the files, is done automatically before re-indexing.",
-        action="store_true",
-    )
-    parser.add_argument(
-        "--cleanup",
-        help="Clean up the library, removing any files that are not in the index, or vice-versa",
-        action="store_true",
-    )
-    parser.add_argument(
-        "--_background_process",
-        help="Internal use only, do not use.",
-        action="store_true",
-    )
-    parser.add_argument(
-        "--playlist",
-        help="Search for a playlist instead of a song.",
-        action="store_true",
-    )
-    parser.add_argument(
-        "--_crash",
-        help="crash the program for testing purposes",
-        action="store_true",
-    )
-    args = parser.parse_args()
+    parser.add_argument("--shuffle", help="Shuffles the songs if set", action="store_true")
+    parser.add_argument("--background", help="Makes the song play, but doesn't stop you from controlling the terminal.",
+                        action="store_true")
+    parser.add_argument("--reindex", help="Re-index the whole library", action="store_true")
+    parser.add_argument("--reformat",
+                        help="Reformat the library, actually edits the files, is done automatically before re-indexing.",
+                        action="store_true")
+    parser.add_argument("--cleanup",
+                        help="Clean up the library, removing any files that are not in the index, or vice-versa",
+                        action="store_true")
+    parser.add_argument("--_background_process", help="Internal use only, do not use.", action="store_true")
+    parser.add_argument("--_crash", help="Crash the program for testing purposes", action="store_true")
+    parser.add_argument("--playlist", help="whether to execute the command in the context of a playlist or not", action="store_true")
+
+    # capture subsequent arguments
+    args, unknown_args = parser.parse_known_args()
+
     args = vars(args)
+
+    # capture any flags that were set in unknown_args
+    for arg in unknown_args:
+        if arg.startswith("--"):
+            args[arg[2:]] = True
+            # remove the flag from the unknown_args
+            unknown_args.remove(arg)
+        elif arg.startswith("-"):
+            args[arg[1:]] = True
+            # also remove the flag from the unknown_args
+
+    args["args"] = unknown_args
+
     try:
 
         central.main(args)

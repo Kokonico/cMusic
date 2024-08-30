@@ -3,9 +3,6 @@
 
 import os
 
-from decorator import n_args
-from z3 import unknown
-
 # prevent pygame support prompt (must do before importing anything from pygame)
 os.environ["PYGAME_HIDE_SUPPORT_PROMPT"] = "1"
 
@@ -20,10 +17,11 @@ os.environ["PYGAME_HIDE_SUPPORT_PROMPT"] = "1"
 
 from cmusic import constants
 
+from objlog import LogNode
 from objlog.LogMessages import Debug, Info, Warn, Error, Fatal
 from cmusic import main as central
 
-MAIN = central.MAIN
+BOOTLOADER = LogNode(name="BOOTLOADER", log_file=constants.LOG_FILE)
 try:
     import argparse
     import subprocess
@@ -31,22 +29,23 @@ try:
     import traceback
     import time
 except ImportError as e:
-    MAIN.print = True
-    MAIN.log(Fatal("Failed to import required python module: " + str(e)))
-    MAIN.log(e)
-    MAIN.log(Error("If you have compiled python from source, make sure all dependencies are installed and recompile, "
+    BOOTLOADER.print = True
+    BOOTLOADER.log(Fatal("Failed to import required python module: " + str(e)))
+    BOOTLOADER.log(e)
+    BOOTLOADER.log(Error("If you have compiled python from source, make sure all dependencies are installed and recompile, "
                    "otherwise your python installation may be corrupt/out of version."))
-    MAIN.print = False
+    BOOTLOADER.print = False
     exit(1)
 
 try:
     from cmusic.constants import CRASH_FOLDER
 except ImportError:
-    MAIN.print = True
-    MAIN.log(Fatal("Failed to import internal variable: constants -> CRASH_FOLDER"))
-    MAIN.log(Error("Please check the integrity of the installation"))
-    MAIN.print = False
+    BOOTLOADER.print = True
+    BOOTLOADER.log(Fatal("Failed to import internal variable: constants -> CRASH_FOLDER"))
+    BOOTLOADER.log(Error("Please check the integrity of the installation"))
+    BOOTLOADER.print = False
     exit(1)
+
 
 def main():
     # verify the OS (to make sure it's supported)
@@ -58,7 +57,7 @@ def main():
             try:
                 os.environ["CMUSIC_HIDE_UNSUPPORTED_OS"]
             except KeyError:
-                MAIN.log(
+                BOOTLOADER.log(
                     Warn(
                         "Windows is not supported, and will probably not work correctly."
                     )
@@ -68,16 +67,16 @@ def main():
                 )
                 exit(1)
         case "posix":
-            MAIN.log(Info("Detected POSIX OS, should work fine."))
+            BOOTLOADER.log(Info("Detected POSIX OS, should work fine."))
         case _:
-            MAIN.log(Warn("Unknown OS, here be dragons."))
+            BOOTLOADER.log(Warn("Unknown OS, here be dragons."))
             print("Unknown OS, here be dragons.")
 
     # assure tmux is installed
     tmux_check = subprocess.run(["tmux", "-V"], stdout=subprocess.PIPE, stderr=subprocess.PIPE)
     if tmux_check.returncode != 0:
         # tmux isn't installed
-        MAIN.log(Warn("tmux is not installed."))
+        BOOTLOADER.log(Warn("tmux is not installed."))
         specific_os = (
             subprocess.run(
                 ["uname", "-s"], stdout=subprocess.PIPE, stderr=subprocess.PIPE
@@ -86,7 +85,7 @@ def main():
             .strip()
         )
         if specific_os == "Darwin":
-            MAIN.log(
+            BOOTLOADER.log(
                 Info(
                     "macOS detected, requesting installation of tmux via Homebrew."
                 )
@@ -95,13 +94,13 @@ def main():
             if tmux_install.lower() == "y":
                 brew_install = subprocess.run(["brew", "install", "tmux"])
                 if brew_install.returncode != 0:
-                    MAIN.log(Error("Failed to install tmux via Homebrew."))
+                    BOOTLOADER.log(Error("Failed to install tmux via Homebrew."))
                     print(
                         "Failed to install tmux via Homebrew, do you have Homebrew installed?"
                     )
                     exit(1)
             else:
-                MAIN.log(
+                BOOTLOADER.log(
                     Warn("tmux is required for background playback, please install it.")
                 )
                 print(
@@ -112,13 +111,13 @@ def main():
         elif specific_os == "Linux":
             # linux
             # if someone could provide a way to ask the user to install tmux on linux, that would be great.
-            MAIN.log(Warn("tmux is not installed."))
+            BOOTLOADER.log(Warn("tmux is not installed."))
             print(
                 "tmux is not installed, please install it via your package manager or add it to your PATH."
             )
             exit(1)
         else:
-            MAIN.log(Warn("Unable to determine OS, please install tmux manually."))
+            BOOTLOADER.log(Warn("Unable to determine OS, please install tmux manually."))
             print("Unable to determine OS, please install tmux manually.")
 
     # this may break everything
@@ -169,7 +168,8 @@ def main():
                         action="store_true")
     parser.add_argument("--_background_process", help="Internal use only, do not use.", action="store_true")
     parser.add_argument("--_crash", help="Crash the program for testing purposes", action="store_true")
-    parser.add_argument("--playlist", help="whether to execute the command in the context of a playlist or not", action="store_true")
+    parser.add_argument("--playlist", help="whether to execute the command in the context of a playlist or not",
+                        action="store_true")
 
     # capture subsequent arguments
     args, unknown_args = parser.parse_known_args()
@@ -192,23 +192,24 @@ def main():
 
         central.main(args)
     except KeyboardInterrupt:
-        MAIN.log(Info("User shutdown Program"))
+        BOOTLOADER.log(Info("User shutdown Program"))
         print("User shutdown Program")
     except Exception as e:
-        MAIN.print = True
-        MAIN.log(Fatal(f"Oh No, cMusic has crashed!"))
-        MAIN.log(Info(f"Crash log saved to {CRASH_FOLDER}"))
-        MAIN.log(Info(("Press enter to exit...")))
-        MAIN.print = False
-        MAIN.log(e)
-        MAIN.log(Error(f"Traceback: \n{traceback.format_exc()}"))
-        MAIN.dump_messages(
+        BOOTLOADER.print = True
+        BOOTLOADER.log(Fatal(f"Oh No, cMusic has crashed!"))
+        BOOTLOADER.log(Info(f"Crash log saved to {CRASH_FOLDER}"))
+        BOOTLOADER.log(Info("Press enter to exit..."))
+        BOOTLOADER.print = False
+        BOOTLOADER.log(e)
+        BOOTLOADER.log(Error(f"Traceback: \n{traceback.format_exc()}"))
+        BOOTLOADER.dump_messages(
             os.path.join(
                 CRASH_FOLDER, f"crash_{time.strftime('%Y-%m-%d_%H-%M-%S')}.log"
             )
         )
         # wait for any key press
         input()
+
 
 if __name__ == "__main__":
     main()

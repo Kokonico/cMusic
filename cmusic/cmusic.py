@@ -175,9 +175,14 @@ def main():
     args, unknown_args = parser.parse_known_args()
 
     args = vars(args)
+    args_list = [args["command"]]
+    args_list += list(key for key in args.keys() if args[key] is True)
 
-    # capture any flags that were set in unknown_args
-    for arg in unknown_args:
+    all_arguments = args_list + unknown_args
+
+    # capture any flags that were set in arguments
+
+    for arg in all_arguments:
         if arg.startswith("--"):
             args[arg[2:]] = True
             # remove the flag from the unknown_args
@@ -185,6 +190,7 @@ def main():
         elif arg.startswith("-"):
             args[arg[1:]] = True
             # also remove the flag from the unknown_args
+            unknown_args.remove(arg)
 
     args["args"] = unknown_args
 

@@ -2,9 +2,10 @@
 ## Bug Tracking
 - No known bugs
 ## QOL
-- [ ] make command autofilling more user-friendly, **ESPECIALLY** for playlists
+- [x] make command autofilling more user-friendly, **ESPECIALLY** for playlists
 ## Features
-- [ ] Implement SOFA support for spatial audio
+- [ ] show album art in the player
+- [ ] windows support (somehow gotta replace posix and tmux, or wsl?)
 - [ ] Implement support for more audio formats (wav, m4a, ogg)
 - [ ] Equalizer support (change through config file)
 - [ ] Audio Normalization

@@ -32,6 +32,27 @@ def safe(filename):
         return None
     return re.sub(r'[\\/*?:"<>| ]', "_", filename)
 
+def column_exists(db_path, table_name, column_name):
+    """Check if a column exists in a table."""
+    conn = sqlite3.connect(db_path)
+    c = conn.cursor()
+    c.execute(f"PRAGMA table_info({table_name})")
+    columns = [column[1] for column in c.fetchall()]
+    conn.close()
+    return column_name in columns
+
+def create_nonexistent_columns():
+    """create columns that don't exist in the database"""
+    conn = sqlite3.connect(os.path.join(config["library"], "index.db"))
+    c = conn.cursor()
+    c.execute("SELECT * FROM songs")
+    # so far all we need to do is check if the lyrics column exists
+    # every other column has been there since the beginning
+    for column_name, column_type in {"lyrics": "TEXT"}.items():
+        if not column_exists(os.path.join(config["library"], "index.db"), "songs", column_name):
+            c.execute(f"ALTER TABLE songs ADD COLUMN {column_name} {column_type}")
+            conn.commit()
+
 
 def init_index(library_file: str):
     """initialize an index file for a library"""
@@ -39,7 +60,7 @@ def init_index(library_file: str):
     c = conn.cursor()
     # create table to link tags to file paths
     c.execute(
-        "CREATE TABLE IF NOT EXISTS songs (id INTEGER PRIMARY KEY, path TEXT, title TEXT, artist TEXT, album TEXT, duration REAL, genre TEXT, year INTEGER)"
+        "CREATE TABLE IF NOT EXISTS songs (id INTEGER PRIMARY KEY, path TEXT, title TEXT, artist TEXT, album TEXT, duration REAL, genre TEXT, year INTEGER, lyrics TEXT)"
     )
     conn.commit()
     # playlists (many to many)
@@ -50,6 +71,8 @@ def init_index(library_file: str):
     c.execute(
         "CREATE TABLE IF NOT EXISTS playlist_songs (playlist_id INTEGER, song_id INTEGER)"
     )
+
+    create_nonexistent_columns()  # just in case
     conn.commit()
     conn.close()
 
@@ -131,6 +154,7 @@ def search_index(library_file: str, search_term: str):
     """search the index within a library for a song"""
     conn = sqlite3.connect(os.path.join(library_file, "index.db"))
     c = conn.cursor()
+    # TODO: better search
     c.execute(
         "SELECT * FROM songs WHERE title LIKE ? OR artist LIKE ? OR album LIKE ? OR genre LIKE ? OR year LIKE ?",
         (

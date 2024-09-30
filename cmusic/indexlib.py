@@ -621,3 +621,43 @@ def delete_song(song):
     os.remove(song[1])
     conn.close()
     log.log(Info(f"Song '{song[2]}' deleted."))
+
+def get_lyrics(song):
+    """get the lyrics of a song"""
+    conn = sqlite3.connect(os.path.join(config["library"], "index.db"))
+    c = conn.cursor()
+    c.execute("SELECT * FROM songs WHERE id = ?", (song[0],))
+    song = c.fetchone()
+    if song is None:
+        log.log(Error(f"Song not found."))
+        print("Song not found.")
+        return
+    else:
+        log.log(Info(f"Getting lyrics for song '{song[2]}'..."))
+    conn.close()
+    return song[8]
+
+def get_sylt_lyrics(song, time_ms: float, distance_margin: float = 700.0):
+    """get the live lyrics of a song"""
+    # sylt lyrics are stored within the .mp3 file itself
+    # we can use mutagen to extract them
+    try:
+        muta = mutagen.File(song[1])
+    except mutagen.mp3.HeaderNotFoundError:
+        log.log(Error(f"Unable to read file '{song[2]}' due to Bad Header."))
+        return
+    try:
+        lyrics = muta["SYLT::eng"].text
+        # find the closest timestamp
+        closest = ["NO_LYRIC", 50000000000.0]
+        for lyric in lyrics:
+            if abs(float(lyric[1]) - time_ms) < abs(closest[1] - time_ms):
+                closest = lyric
+        if abs(float(closest[1]) - time_ms) > distance_margin:
+            log.log(Warn(f"No SYLT lyrics within margin for '{song[2]}'."))
+            return  # no lyric in margin
+        return closest[0]
+    except KeyError:
+        log.log(Warn(f"No SYLT lyrics found for song '{song[2]}'."))
+        return
+

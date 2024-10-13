@@ -7,6 +7,7 @@ import sqlite3
 import mutagen
 import mutagen.id3
 from tinytag import TinyTag
+from operator import itemgetter
 
 import inquirer
 
@@ -637,10 +638,11 @@ def get_lyrics(song):
     conn.close()
     return song[8]
 
-def get_sylt_lyrics(song, time_ms: float, distance_margin: float = 700.0):
+def get_sylt_lyrics(song, time_ms: float):
     """get the live lyrics of a song"""
     # sylt lyrics are stored within the .mp3 file itself
     # we can use mutagen to extract them
+    closest = ["", -500000]
     try:
         muta = mutagen.File(song[1])
     except mutagen.mp3.HeaderNotFoundError:
@@ -648,15 +650,12 @@ def get_sylt_lyrics(song, time_ms: float, distance_margin: float = 700.0):
         return
     try:
         lyrics = muta["SYLT::eng"].text
-        # find the closest timestamp
-        closest = ["NO_LYRIC", 50000000000.0]
+        # get lyrics closest to the current time (but not after)
         for lyric in lyrics:
-            if abs(float(lyric[1]) - time_ms) < abs(closest[1] - time_ms):
+            if lyric[0] < time_ms and lyric[0] > closest[1]:
                 closest = lyric
-        if abs(float(closest[1]) - time_ms) > distance_margin:
-            log.log(Warn(f"No SYLT lyrics within margin for '{song[2]}'."))
-            return  # no lyric in margin
-        return closest[0]
+        return closest[1]
+
     except KeyError:
         log.log(Warn(f"No SYLT lyrics found for song '{song[2]}'."))
         return

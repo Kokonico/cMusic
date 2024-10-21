@@ -533,7 +533,7 @@ def proper(time_int):
     return time_int if len(str(time_int)) >= 2 else "0" + str(time_int)
 
 
-def draw_interface(tags, song_data, looped, shuffle, lyrics):
+def draw_interface(tags, song_data, looped, shuffle, lyrics: list | None = None):
     """draw the music player interface once."""
     # build music player
     # figure out percentage of song done
@@ -595,10 +595,13 @@ def draw_interface(tags, song_data, looped, shuffle, lyrics):
     state = "|>" if not pygame.mixer.music.get_busy() else "||"
     # this line is a disaster
     # please don't touch it
-    current_lyric = indexlib.get_lyric(lyrics, elapsed)
+    if lyrics is not None:
+        current_lyric = indexlib.get_lyric(lyrics, elapsed)
+    else:
+        current_lyric = None
     final_playing = f"NOW PLAYING: {song_data[2] if song_data[2] is not None else tags.title if tags.title is not None else song_data[1].split('/')[-1].split('.')[0]} by {song_data[3] if song_data[3] is not None else tags.artist} {f'({song_data[4]})' if song_data[4] not in ['None', None] else f'({tags.album})' if tags.album not in ['None', None] else ''}"
-
-    new_state = f"\r{final_playing}\n{final_bar}\n<< {state} >> {proper(int(elapsed_minutes))}:{proper(int(elapsed_seconds))} / {proper(int(duration_minutes))}:{proper(int(duration_seconds))} {final_slider} {'🔁' if looped else ''}{'🔀' if shuffle else ''}\n\n{current_lyric if current_lyric else ''}"
+    double_newline = "\n\n"  # used for compatibility with python 3.11 and under
+    new_state = f"\r{final_playing}\n{final_bar}\n<< {state} >> {proper(int(elapsed_minutes))}:{proper(int(elapsed_seconds))} / {proper(int(duration_minutes))}:{proper(int(duration_seconds))} {final_slider} {'🔁' if looped else ''}{'🔀' if shuffle else ''}{f'{double_newline}{current_lyric}' if current_lyric else ''}"
     return "\033c" + new_state
 
 

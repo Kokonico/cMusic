@@ -27,11 +27,65 @@ log = objlog.LogNode(
     "INDEXER", log_file=os.path.join(os.path.expanduser("~"), ".cmusic", "cmusic.log")
 )
 
+sylt_tags = [
+    "SYLT",
+    "SYLT::eng",
+    "SYLT::jpn",
+    "SYLT::kor",
+    "SYLT::spa",
+    "SYLT::fra",
+    "SYLT::deu",
+    "SYLT::ita",
+    "SYLT::dut",
+    "SYLT::por",
+    "SYLT::swe",
+    "SYLT::fin",
+    "SYLT::rus",
+    "SYLT::zho",
+    "SYLT::ara",
+    "SYLT::heb",
+    "SYLT::hin",
+    "SYLT::ben",
+    "SYLT::tur",
+    "SYLT::pes",
+    "SYLT::urd",
+    "SYLT::vie",
+    "SYLT::tha",
+    "SYLT::ind",
+    "SYLT::fil",
+    "SYLT::msa",
+    "SYLT::tam",
+    "SYLT::tel",
+    "SYLT::kan",
+    "SYLT::mal",
+    "SYLT::sin",
+    "SYLT::nep",
+    "SYLT::pan",
+    "SYLT::guj",
+    "SYLT::mar",
+    "SYLT::asm",
+    "SYLT::ori",
+    "SYLT::bho",
+    "SYLT::raj",
+    "SYLT::san",
+    "SYLT::kha",
+    "SYLT::kok",
+    "SYLT::sd",
+    "SYLT::ps",
+    "SYLT::ku",
+    "SYLT::prs",
+    "SYLT::bal",
+    "SYLT::pa",
+    "SYLT::ml"
+    # if there are more, add them here
+]
+
 
 def safe(filename):
     if filename is None:
         return None
     return re.sub(r'[\\/*?:"<>| ]', "_", filename)
+
 
 def column_exists(db_path, table_name, column_name):
     """Check if a column exists in a table."""
@@ -41,6 +95,7 @@ def column_exists(db_path, table_name, column_name):
     columns = [column[1] for column in c.fetchall()]
     conn.close()
     return column_name in columns
+
 
 def create_nonexistent_columns():
     """create columns that don't exist in the database"""
@@ -147,7 +202,7 @@ def index_file(library_file: str, file: str):
     )
     conn.commit()
     id = c.lastrowid
-    None_to_null(id) # just for cleanliness
+    None_to_null(id)  # just for cleanliness
     conn.close()
 
 
@@ -167,6 +222,7 @@ def search_index(library_file: str, search_term: str):
         ),
     )
     return c.fetchall()
+
 
 def tag_edit(song_file: str):
     """Allows the user to edit the tags of a song"""
@@ -347,6 +403,7 @@ def reformat():
         None_to_null(song[0])
     conn.close()
     log.log(Info("All songs reformatted."))
+
 
 def None_to_null(songid: int):
     """takes any strings that are None and converts them to a null value"""
@@ -623,6 +680,7 @@ def delete_song(song):
     conn.close()
     log.log(Info(f"Song '{song[2]}' deleted."))
 
+
 def get_lyrics(song):
     """get the lyrics of a song"""
     conn = sqlite3.connect(os.path.join(config["library"], "index.db"))
@@ -638,25 +696,30 @@ def get_lyrics(song):
     conn.close()
     return song[8]
 
-def get_sylt_lyrics(song, time_ms: float):
-    """get the live lyrics of a song"""
-    # sylt lyrics are stored within the .mp3 file itself
-    # we can use mutagen to extract them
-    closest = ["", -500000]
+
+def get_lyric(lyrics, time_ms: float):
+    """get the live lyric for a specific time"""
+    closest = ["", -500000000]
+    for lyric in lyrics:
+        if time_ms >= lyric[1] >= closest[1]:
+            closest = lyric
+    return closest[0]
+
+def grab_sylt_lyrics(song):
+    """get the lyrics of the song from the SYLT tag"""
     try:
         muta = mutagen.File(song[1])
     except mutagen.mp3.HeaderNotFoundError:
         log.log(Error(f"Unable to read file '{song[2]}' due to Bad Header."))
         return
-    try:
-        lyrics = muta["SYLT::eng"].text
-        # get lyrics closest to the current time (but not after)
-        for lyric in lyrics:
-            if time_ms > lyric[1] > closest[1]:
-                closest = lyric
-        return closest[0]
-
-    except KeyError:
-        log.log(Warn(f"No SYLT lyrics found for song '{song[2]}'."))
-        return
-
+    lyrics = None
+    for tag in sylt_tags:
+        try:
+            lyrics = muta[tag]
+            break
+        except KeyError:
+            continue
+    if lyrics is None:
+        return None
+    else:
+        return lyrics.text

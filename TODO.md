@@ -1,6 +1,9 @@
 # TODOs for 2.0.0
 ## Bug Tracking
 - No known bugs
+
+## Internal
+- [ ] replace the song list with an actual song object
 ## QOL
 - [x] make command autofilling more user-friendly, **ESPECIALLY** for playlists
 ## Features

@@ -652,9 +652,9 @@ def get_sylt_lyrics(song, time_ms: float):
         lyrics = muta["SYLT::eng"].text
         # get lyrics closest to the current time (but not after)
         for lyric in lyrics:
-            if lyric[0] < time_ms and lyric[0] > closest[1]:
+            if time_ms > lyric[1] > closest[1]:
                 closest = lyric
-        return closest[1]
+        return closest[0]
 
     except KeyError:
         log.log(Warn(f"No SYLT lyrics found for song '{song[2]}'."))

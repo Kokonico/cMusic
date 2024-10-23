@@ -158,9 +158,8 @@ def main(args: dict):
                             songs = json.load(f)
                             MAIN.log(Debug(songs))
                         for song in songs:
-                            # check config
-                            conf_playback = json.load(open(PLAYBACK_CONFIG_FILE))
                             play(song[1], song, conf_playback["loop"], conf_playback["shuffle"], config)
+                            conf_playback = json.load(open(PLAYBACK_CONFIG_FILE))  # reload the playback config
                             if not conf_playback["loop"]:
                                 songs.remove(song)
                             with open(QUEUE_FILE) as f:

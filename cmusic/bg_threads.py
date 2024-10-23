@@ -10,7 +10,7 @@ import threading
 import pygame
 import subprocess
 
-from .constants import config, CONFIG_FILE, LOG_FILE
+from .constants import config, CONFIG_FILE, LOG_FILE, PLAYBACK_CONFIG_FILE
 
 from objlog.LogMessages import Info, Error
 
@@ -84,6 +84,15 @@ class KeyHandler(threading.Thread):
                             self.MAIN.log(Info("Stopping the song."))
                             pygame.mixer.music.stop()
                             self.stop_flag.set()
+                        case "l":
+                            # toggle looping (in the playback config)
+                            playback_config = json.load(open(PLAYBACK_CONFIG_FILE))
+                            playback_config["loop"] = not playback_config["loop"]
+                            with open(PLAYBACK_CONFIG_FILE, "w") as f:
+                                f.write(json.dumps(playback_config, indent=4))
+                            self.MAIN.log(
+                                Info(f"Looping set to {playback_config['loop']}")
+                            )
         except Exception as e:
             # clean up terminos
             termios.tcsetattr(sys.stdin, termios.TCSADRAIN, old_settings)

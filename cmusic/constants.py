@@ -24,6 +24,13 @@ MAIN = objlog.LogNode("CMUSIC")
 
 QUEUE_FILE = os.path.join(CMUSIC_DIR, "queue.json")
 
+PLAYBACK_CONFIG_FILE = os.path.join(CMUSIC_DIR, "playback.json")
+
+PLAYBACK_CONFIG = {
+    "loop": False,
+    "shuffle": False,
+}
+
 # default config
 # this is the default config that is written to the config file if it doesn't exist
 
@@ -69,6 +76,12 @@ CRASH_FOLDER = os.path.join(CMUSIC_DIR, "crashes")
 if not os.path.exists(LIBRARY):
     os.makedirs(LIBRARY)
     MAIN.log(Info("Created library directory"))
+
+# create playback config file
+if not os.path.exists(PLAYBACK_CONFIG_FILE):
+    with open(PLAYBACK_CONFIG_FILE, "w") as f:
+        f.write(json.dumps(PLAYBACK_CONFIG, indent=4))
+    MAIN.log(Info("Created playback config file"))
 
 # queue file
 

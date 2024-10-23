@@ -18,7 +18,7 @@ import subprocess
 # local package imports
 from . import indexlib
 from . import bg_threads
-from .constants import MAIN, config, CONFIG_FILE, LIBRARY, QUEUE_FILE
+from .constants import MAIN, config, CONFIG_FILE, LIBRARY, QUEUE_FILE, PLAYBACK_CONFIG_FILE
 
 import math
 import random
@@ -146,13 +146,22 @@ def main(args: dict):
                     json.dump(songs, f)
                 try:
                     # TODO: make more readable
+                    conf_playback = {
+                        "loop": args["loop"],
+                        "shuffle": args["shuffle"],
+                    }
+                    # write the playback config to the file
+                    with open(PLAYBACK_CONFIG_FILE, "w") as f:
+                        f.write(json.dumps(conf_playback, indent=4))
                     while True:  # we want to loop through the songs indefinitely (unless loop is set to False)
                         with open(QUEUE_FILE) as f:
                             songs = json.load(f)
                             MAIN.log(Debug(songs))
                         for song in songs:
-                            play(song[1], song, args["loop"], args["shuffle"], config)
-                            if not args["loop"]:
+                            # check config
+                            conf_playback = json.load(open(PLAYBACK_CONFIG_FILE))
+                            play(song[1], song, conf_playback["loop"], conf_playback["shuffle"], config)
+                            if not conf_playback["loop"]:
                                 songs.remove(song)
                             with open(QUEUE_FILE) as f:
                                 new = json.load(f)
@@ -160,13 +169,13 @@ def main(args: dict):
                                     if stored == song:
                                         new.remove(stored)
                                         # if loop is on, add the song back to the queue at the end
-                                        if args["loop"]:
+                                        if conf_playback["loop"]:
                                             new.append(song)
                                 with open(QUEUE_FILE, "w") as f:
                                     json.dump(new, f)
                                 break
 
-                        if not args["loop"] and len(new) <= 0:
+                        if not conf_playback["loop"] and len(new) <= 0:
                             break
                 except (
                         KeyboardInterrupt
@@ -631,7 +640,11 @@ def play(
         # start the key press listener
         key_thread.start()
         while pygame.mixer.music.get_pos() != -1:
-
+            # grab playback info
+            with open(PLAYBACK_CONFIG_FILE) as f:
+                playback_config = json.load(f)
+                looped = playback_config["loop"]
+                shuffle = playback_config["shuffle"]
             # draw the interface
             interface_frame = draw_interface(tags, song_data, looped, shuffle, lyrics)
             if interface_frame != last_printed_state:

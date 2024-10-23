@@ -195,7 +195,6 @@ def main():
     args["args"] = unknown_args
 
     try:
-
         central.main(args)
     except KeyboardInterrupt:
         BOOTLOADER.log(Info("User shutdown Program"))

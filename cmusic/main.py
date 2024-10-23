@@ -162,6 +162,8 @@ def main(args: dict):
                             conf_playback = json.load(open(PLAYBACK_CONFIG_FILE))  # reload the playback config
                             if not conf_playback["loop"]:
                                 songs.remove(song)
+                            if conf_playback["shuffle"]:
+                                random.shuffle(songs)
                             with open(QUEUE_FILE) as f:
                                 new = json.load(f)
                                 for stored in new:
@@ -323,7 +325,7 @@ def main(args: dict):
 
         case "playlist":
             # check playlist command
-            match args["args"][0]:
+            match args["playlist_command"]:
                 case "create":
                     # create a playlist
                     playlist_name = args["args"][1]
@@ -344,15 +346,15 @@ def main(args: dict):
                 case "list":
                     # list all playlists
                     try:
-                        playlist = indexlib.search_playlist(args["args"][1])
+                        playlist = indexlib.search_playlist(args["args"][0])
                         # list a specific playlist
                         playlist = indexlib.get_playlist_contents(playlist)
                         if playlist is None:
-                            MAIN.log(Warn(f"Playlist '{args['args'][1]}' not found."))
-                            print(f"Playlist '{args['args'][1]}' not found.")
+                            MAIN.log(Warn(f"Playlist '{args['args'][0]}' not found."))
+                            print(f"Playlist '{args['args'][0]}' not found.")
                             return
-                        MAIN.log(Info(f"Playlist '{args['args'][1]}' contents:"))
-                        print(f"Playlist '{args['args'][1]}' contents:")
+                        MAIN.log(Info(f"Playlist '{args['args'][0]}' contents:"))
+                        print(f"Playlist '{args['args'][0]}' contents:")
                         for song in playlist:
                             print(
                                 f"{song[2]} by {song[3]} {f'({song[4]})' if song[4] not in [None, 'None'] else ''}"
@@ -373,11 +375,11 @@ def main(args: dict):
                 case "remove":
                     # remove a song from a playlist
                     try:
-                        playlist_name = args["args"][1]
-                        song_name = args["args"][2]
+                        playlist_name = args["args"][0]
+                        song_name = args["args"][1]
                         playlist = indexlib.search_playlist(playlist_name)
                         songs = [scan_library(song_name) for song in args["args"][2:]]
-                        # add any lists to the songs list
+                        # add any lists to the song list
                         for song in songs:
                             if isinstance(song, list):
                                 songs += song
@@ -393,8 +395,8 @@ def main(args: dict):
                 case "add":
                     # add a song to a playlist
                     try:
-                        playlist_name = args["args"][1]
-                        songs = [scan_library(song) for song in args["args"][2:]]
+                        playlist_name = args["args"][0]
+                        songs = [scan_library(song) for song in args["args"][1:]]
                         # add any lists to the songs list
                         for song in songs:
                             if isinstance(song, list):
@@ -402,9 +404,14 @@ def main(args: dict):
                                 songs.remove(song)
                         # remove any None values from the list
                         songs = [tuple(song) for song in songs if song is not None]
+                        if songs == []:
+                            MAIN.log(Warn("No songs found to add."))
+                            print("No songs found to add.")
+                            return
                         playlist = indexlib.search_playlist(playlist_name)
                         for song in songs:
                             indexlib.add_to_playlist(playlist, song)
+                            print(f"added {song[2]} to {playlist_name}")
                     except IndexError:
                         MAIN.log(Warn("Playlist and song name must be provided."))
                         print("Playlist and song name must be provided.")
@@ -412,7 +419,7 @@ def main(args: dict):
                 case "delete":
                     # delete a playlist
                     try:
-                        playlist_name = args["args"][1]
+                        playlist_name = args["args"][0]
                         playlist = indexlib.search_playlist(playlist_name)
                         indexlib.delete_playlist(playlist)
                     except IndexError:

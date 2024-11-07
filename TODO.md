@@ -15,5 +15,5 @@
 - [ ] Multi-language support
 - [ ] discord RPC
 - [ ] improved search (sql `LIKE` is not a great search method)
-- [ ] Lyrics support _(line by line maybe?)_
+- [x] Lyrics support _(line by line maybe?)_
 - [ ] crossfade between songs (song transitions)

@@ -132,6 +132,11 @@ to control the music when it's not in the background, you can use the following 
 - `cmusic playlist list <name>` to list all the Songs in a playlist.
 - `cmusic play <playlist name> --playlist` to play a playlist.
 
+## Help
+
+### "I want line by line lyrics, it's supported, how do I get it on my songs?"
+A: you can use something like [kid3](https://kid3.kde.org/) to add lyrics to your songs, find the synchronized lyrics from somewhere like [rlclyricsband](https://rclyricsband.com/) and add them to the song. The song files are found in the `~/cMusic\ Library/` directory.
+
 ## Development setup
 
 To set up the development environment, you need to have Poetry and python 3.12+ installed on your system.

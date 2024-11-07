@@ -162,8 +162,6 @@ def main(args: dict):
                             conf_playback = json.load(open(PLAYBACK_CONFIG_FILE))  # reload the playback config
                             if not conf_playback["loop"]:
                                 songs.remove(song)
-                            if conf_playback["shuffle"]:
-                                random.shuffle(songs)
                             with open(QUEUE_FILE) as f:
                                 new = json.load(f)
                                 for stored in new:
@@ -397,7 +395,7 @@ def main(args: dict):
                     try:
                         playlist_name = args["args"][0]
                         songs = [scan_library(song) for song in args["args"][1:]]
-                        # add any lists to the songs list
+                        # add any lists to the song list
                         for song in songs:
                             if isinstance(song, list):
                                 songs += song

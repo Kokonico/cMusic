@@ -93,15 +93,6 @@ class KeyHandler(threading.Thread):
                             self.MAIN.log(
                                 Info(f"Looping set to {playback_config['loop']}")
                             )
-                        case "h":
-                            # toggle shuffling (in the playback config)
-                            playback_config = json.load(open(PLAYBACK_CONFIG_FILE))
-                            playback_config["shuffle"] = not playback_config["shuffle"]
-                            with open(PLAYBACK_CONFIG_FILE, "w") as f:
-                                f.write(json.dumps(playback_config, indent=4))
-                            self.MAIN.log(
-                                Info(f"Shuffling set to {playback_config['shuffle']}")
-                            )
         except Exception as e:
             # clean up terminos
             termios.tcsetattr(sys.stdin, termios.TCSADRAIN, old_settings)

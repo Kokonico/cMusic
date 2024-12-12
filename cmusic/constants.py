@@ -39,6 +39,41 @@ DEFAULT_CONFIG = {
     "volume": 100,
 }
 
+
+class Song:
+    """Should've made this sooner"""
+
+    def __init__(self, id: int, path: str, title: str | None, artist: str | None, album: str | None, duration: float, genre: str | None, year: int | None):
+        self.path = path
+        self.title = title
+        self.artist = artist
+        self.album = album
+        self.id = id
+        self.duration = duration
+        self.genre = genre
+        self.year = year
+
+    def export(self):
+        return {
+            "path": self.path,
+            "title": self.title,
+            "artist": self.artist,
+            "album": self.album,
+            "id": self.id,
+            "duration": self.duration,
+            "genre": self.genre,
+            "year": self.year
+        }
+
+    def __str__(self):
+        return f"{self.title} by {self.artist} {f'({self.album})' if self.album else ''}"
+
+
+# EXECUTION PAST THIS POINT
+# ^^^ this sounds like a threat
+# ^^^ shut up me from the past you're not funny
+# ^^^ yes I am
+
 # check if the cmusic directory exists
 if not os.path.exists(CMUSIC_DIR):
     MAIN.log(Info("Creating cmusic directory"))

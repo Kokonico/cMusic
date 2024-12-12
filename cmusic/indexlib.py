@@ -7,11 +7,10 @@ import sqlite3
 import mutagen
 import mutagen.id3
 from tinytag import TinyTag
-from operator import itemgetter
 
 import inquirer
 
-from .constants import config
+from .constants import config, Song
 
 import objlog
 from objlog.LogMessages import Debug, Info, Warn, Error, Fatal
@@ -81,6 +80,18 @@ sylt_tags = [
 ]
 
 
+def song_from_id(songid: int):
+    """get a song from the database using its id"""
+    conn = sqlite3.connect(os.path.join(config["library"], "index.db"))
+    c = conn.cursor()
+    c.execute("SELECT * FROM songs WHERE id = ?", (songid,))
+    song = c.fetchone()
+    # convert to Song object
+    song = Song(song[0], song[1], song[2], song[3], song[4], song[5], song[6])
+    conn.close()
+    return song
+
+
 def safe(filename):
     if filename is None:
         return None
@@ -102,9 +113,8 @@ def create_nonexistent_columns():
     conn = sqlite3.connect(os.path.join(config["library"], "index.db"))
     c = conn.cursor()
     c.execute("SELECT * FROM songs")
-    # so far all we need to do is check if the lyrics column exists
-    # every other column has been there since the beginning
-    for column_name, column_type in {"lyrics": "TEXT"}.items():
+    # so far all we need to do is check if the columns exist
+    for column_name, column_type in {}.items():
         if not column_exists(os.path.join(config["library"], "index.db"), "songs", column_name):
             c.execute(f"ALTER TABLE songs ADD COLUMN {column_name} {column_type}")
             conn.commit()
@@ -116,7 +126,7 @@ def init_index(library_file: str):
     c = conn.cursor()
     # create table to link tags to file paths
     c.execute(
-        "CREATE TABLE IF NOT EXISTS songs (id INTEGER PRIMARY KEY, path TEXT, title TEXT, artist TEXT, album TEXT, duration REAL, genre TEXT, year INTEGER, lyrics TEXT)"
+        "CREATE TABLE IF NOT EXISTS songs (id INTEGER PRIMARY KEY, path TEXT, title TEXT, artist TEXT, album TEXT, duration REAL, genre TEXT, year INTEGER)"
     )
     conn.commit()
     # playlists (many to many)
@@ -221,7 +231,7 @@ def search_index(library_file: str, search_term: str):
             "%" + search_term + "%",
         ),
     )
-    return c.fetchall()
+    return [Song(*song) for song in c.fetchall()]
 
 
 def tag_edit(song_file: str):
@@ -359,37 +369,37 @@ def reformat():
     conn = sqlite3.connect(os.path.join(config["library"], "index.db"))
     c = conn.cursor()
     c.execute("SELECT * FROM songs")
-    songs = c.fetchall()
+    songs = [Song(*song) for song in c.fetchall()]
 
     for song in songs:
         try:
-            new_name = f"{safe(song[2])}.mp3"
+            new_name = f"{safe(song.title)}.mp3"
         except TypeError:
             # no song name, get from file
-            tags = TinyTag.get(song[1])
+            tags = TinyTag.get(song.path)
             if tags.title is None:
                 # no title, use file name
-                new_name = os.path.basename(song[1])
+                new_name = os.path.basename(song.path)
             else:
                 new_name = f"{safe(tags.title)}.mp3"
 
         new_path = os.path.join(config["library"], new_name)
-        log.log(Info(f"Reformatting '{song[2]}'..."))
+        log.log(Info(f"Reformatting '{song.title}'..."))
         # rename the file
-        os.rename(song[1], new_path)
+        os.rename(song.path, new_path)
         muta = mutagen.File(new_path)
         # set title
-        muta["TIT2"] = mutagen.id3.TIT2(encoding=3, text=["{}".format(song[2])])
+        muta["TIT2"] = mutagen.id3.TIT2(encoding=3, text=["{}".format(song.title)])
         # set artist
-        muta["TPE1"] = mutagen.id3.TPE1(encoding=3, text=["{}".format(song[3])])
+        muta["TPE1"] = mutagen.id3.TPE1(encoding=3, text=["{}".format(song.artist)])
         # set album
-        muta["TALB"] = mutagen.id3.TALB(encoding=3, text=["{}".format(song[4])])
+        muta["TALB"] = mutagen.id3.TALB(encoding=3, text=["{}".format(song.album)])
         # set year
-        muta["TDRC"] = mutagen.id3.TDRC(encoding=3, text=["{}".format(song[7])])
+        muta["TDRC"] = mutagen.id3.TDRC(encoding=3, text=["{}".format(song.year)])
         # set genre
-        muta["TCON"] = mutagen.id3.TCON(encoding=3, text=["{}".format(song[6])])
+        muta["TCON"] = mutagen.id3.TCON(encoding=3, text=["{}".format(song.genre)])
         muta.save()
-        log.log(Info(f"File '{song[2]}' reformatted."))
+        log.log(Info(f"File '{song.title}' reformatted."))
         # update the index (song paths)
         c.execute(
             """
@@ -400,40 +410,36 @@ def reformat():
             (new_path, song[0]),
         )
         conn.commit()
-        None_to_null(song[0])
+        None_to_null(song.id)
     conn.close()
     log.log(Info("All songs reformatted."))
 
 
 def None_to_null(songid: int):
     """takes any strings that are None and converts them to a null value"""
+    song = song_from_id(songid)
+    log.log(Info(f"Converting NULL values to null for song '{song.title}'..."))
+    if song.artist == "None":
+        song.artist = None
+    if song.album == "None":
+        song.album = None
+    if song.year == "None":
+        song.year = None
+    if song.genre == "None":
+        song.genre = None
     conn = sqlite3.connect(os.path.join(config["library"], "index.db"))
     c = conn.cursor()
-    c.execute("SELECT * FROM songs WHERE id = ?", (songid,))
-    song = list(c.fetchone())
-    if song is None:
-        log.log(Error(f"Song not found."))
-        print("Song not found.")
-        return
-    else:
-        log.log(Info(f"Converting NULL values to null for song '{song[2]}'..."))
-    for index, field in enumerate(song):
-        if field == "None":
-            song[index] = None
-
-    # update the index
     c.execute(
         """
     UPDATE songs
-    SET title = ?, artist = ?, album = ?, year = ?, genre = ?
+    SET artist = ?, album = ?, year = ?, genre = ?
     WHERE id = ?
     """,
-        (song[2], song[3], song[4], song[7], song[6], songid),
+        (song.artist, song.album, song.year, song.genre, songid),
     )
     conn.commit()
     conn.close()
-    log.log(Info(f"Song '{song[2]}' edited."))
-    print(f"Song '{song[2]}' edited.")
+    log.log(Info(f"NULL values converted to null for song '{song.title}'."))
 
 
 def cleanup():
@@ -441,15 +447,15 @@ def cleanup():
     conn = sqlite3.connect(os.path.join(config["library"], "index.db"))
     c = conn.cursor()
     c.execute("SELECT * FROM songs")
-    songs = c.fetchall()
+    songs = [Song(*song) for song in c.fetchall()]
 
     for song in songs:
         try:
-            with open(song[1], "rb") as f:
+            with open(song.path, "rb") as f:
                 pass
         except FileNotFoundError:
-            log.log(Warn(f"File '{song[2]}' not found, removing from index."))
-            c.execute("DELETE FROM songs WHERE id = ?", (song[0],))
+            log.log(Warn(f"File '{song.title}' not found, removing from index."))
+            c.execute("DELETE FROM songs WHERE id = ?", (song.id,))
 
     # remove any files that are not in the index
     for root, _, files in os.walk(config["library"]):
@@ -474,15 +480,15 @@ def edit_tags(id: int):
     conn = sqlite3.connect(os.path.join(config["library"], "index.db"))
     c = conn.cursor()
     c.execute("SELECT * FROM songs WHERE id = ?", (id,))
-    song = c.fetchone()
+    song = Song(*c.fetchone())
     if song is None:
         log.log(Error(f"Song not found."))
         print("Song not found.")
         return
     else:
-        log.log(Info(f"Editing song '{song[2]}'..."))
+        log.log(Info(f"Editing song '{song.title}'..."))
     try:
-        editvalues = tag_edit(song[1])
+        editvalues = tag_edit(song.path)
     except TypeError:
         print("the file you are trying to edit is not an mp3 file.")
         return
@@ -513,8 +519,8 @@ def edit_tags(id: int):
     )
     conn.commit()
     conn.close()
-    log.log(Info(f"Song '{song[2]}' edited."))
-    print(f"Song '{song[2]}' edited.")
+    log.log(Info(f"Song '{song.title}' edited."))
+    print(f"Song '{song.title}' edited.")
     reformat()  # reformat the library to apply changes
 
 
@@ -578,26 +584,26 @@ def list_playlist(playlist: tuple):
     return song_data
 
 
-def add_to_playlist(playlist: tuple, song: tuple):
+def add_to_playlist(playlist: tuple, song: Song):
     """add a song to a playlist"""
     conn = sqlite3.connect(os.path.join(config["library"], "index.db"))
     c = conn.cursor()
     c.execute(
         "INSERT INTO playlist_songs (playlist_id, song_id) VALUES (?, ?)",
-        (playlist[0], song[0]),
+        (playlist[0], song.id),
     )
     conn.commit()
     conn.close()
     log.log(Info(f"Song '{song}' added to playlist '{playlist[1]}'."))
 
 
-def remove_from_playlist(playlist: tuple, song: tuple):
+def remove_from_playlist(playlist: tuple, song: Song):
     """remove a song from a playlist"""
     conn = sqlite3.connect(os.path.join(config["library"], "index.db"))
     c = conn.cursor()
     c.execute(
         "DELETE FROM playlist_songs WHERE playlist_id = ? AND song_id = ?",
-        (playlist[0], song[0]),
+        (playlist[0], song.id),
     )
     conn.commit()
     conn.close()
@@ -667,34 +673,18 @@ def delete_song(song):
     conn = sqlite3.connect(os.path.join(config["library"], "index.db"))
     c = conn.cursor()
     c.execute("SELECT * FROM songs WHERE id = ?", (song[0],))
-    song = c.fetchone()
+    song = Song(*c.fetchone())
     if song is None:
         log.log(Error(f"Song not found."))
         print("Song not found.")
         return
     else:
-        log.log(Info(f"Deleting song '{song[2]}'..."))
-    c.execute("DELETE FROM songs WHERE id = ?", (song[0],))
+        log.log(Info(f"Deleting song '{song.title}'..."))
+    c.execute("DELETE FROM songs WHERE id = ?", (song.id,))
     conn.commit()
-    os.remove(song[1])
+    os.remove(song.path)
     conn.close()
-    log.log(Info(f"Song '{song[2]}' deleted."))
-
-
-def get_lyrics(song):
-    """get the lyrics of a song"""
-    conn = sqlite3.connect(os.path.join(config["library"], "index.db"))
-    c = conn.cursor()
-    c.execute("SELECT * FROM songs WHERE id = ?", (song[0],))
-    song = c.fetchone()
-    if song is None:
-        log.log(Error(f"Song not found."))
-        print("Song not found.")
-        return
-    else:
-        log.log(Info(f"Getting lyrics for song '{song[2]}'..."))
-    conn.close()
-    return song[8]
+    log.log(Info(f"Song '{song.id}' deleted."))
 
 
 def get_lyric(lyrics, time_ms: float):
@@ -705,12 +695,13 @@ def get_lyric(lyrics, time_ms: float):
             closest = lyric
     return closest[0]
 
-def grab_sylt_lyrics(song):
+
+def grab_sylt_lyrics(song: Song):
     """get the lyrics of the song from the SYLT tag"""
     try:
-        muta = mutagen.File(song[1])
+        muta = mutagen.File(song.path)
     except mutagen.mp3.HeaderNotFoundError:
-        log.log(Error(f"Unable to read file '{song[2]}' due to Bad Header."))
+        log.log(Error(f"Unable to read file '{song.title}' due to Bad Header."))
         return
     lyrics = None
     for tag in sylt_tags:

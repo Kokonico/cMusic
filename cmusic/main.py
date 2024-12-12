@@ -18,7 +18,7 @@ import subprocess
 # local package imports
 from . import indexlib
 from . import bg_threads
-from .constants import MAIN, config, CONFIG_FILE, LIBRARY, QUEUE_FILE, PLAYBACK_CONFIG_FILE
+from .constants import MAIN, config, CONFIG_FILE, LIBRARY, QUEUE_FILE, PLAYBACK_CONFIG_FILE, Song
 
 import math
 import random
@@ -128,7 +128,6 @@ def main(args: dict):
                 if isinstance(song, list):
                     songs += song
                     songs.remove(song)
-            songs = [list(song) for song in songs]
 
             if args["shuffle"]:
                 random.shuffle(songs)
@@ -141,9 +140,10 @@ def main(args: dict):
                 input("Press enter to continue.")
             else:
                 # load songs into queue
+                exportable_songs = [song.export() for song in songs]
                 with open(QUEUE_FILE, "w+") as f:
                     MAIN.log(Debug(songs))
-                    json.dump(songs, f)
+                    json.dump(exportable_songs, f)
                 try:
                     # TODO: make more readable
                     conf_playback = {
@@ -156,20 +156,21 @@ def main(args: dict):
                     while True:  # we want to loop through the songs indefinitely (unless loop is set to False)
                         with open(QUEUE_FILE) as f:
                             songs = json.load(f)
+                            songs = [Song(song["id"], song["path"], song["title"], song["artist"], song["album"], song["duration"], song["genre"], song["year"]) for song in songs]
                             MAIN.log(Debug(songs))
                         for song in songs:
-                            play(song[1], song, conf_playback["loop"], conf_playback["shuffle"], config)
+                            play(song.path, song, conf_playback["loop"], conf_playback["shuffle"], config)
                             conf_playback = json.load(open(PLAYBACK_CONFIG_FILE))  # reload the playback config
                             if not conf_playback["loop"]:
                                 songs.remove(song)
                             with open(QUEUE_FILE) as f:
                                 new = json.load(f)
                                 for stored in new:
-                                    if stored == song:
+                                    if stored == song.export():
                                         new.remove(stored)
                                         # if loop is on, add the song back to the queue at the end
                                         if conf_playback["loop"]:
-                                            new.append(song)
+                                            new.append(song.export())
                                 with open(QUEUE_FILE, "w") as f:
                                     json.dump(new, f)
                                 break
@@ -195,24 +196,17 @@ def main(args: dict):
         case "list":
             # list all songs in the library (through the index)
             songs = indexlib.search_index(config["library"], "")
-            for song in songs:
-                print(
-                    f"{song[2]} by {song[3]} {f'({song[4]})' if song[4] not in [None, 'None'] else ''}"
-                )
+            print("\n".join([str(song) for song in songs]))
         case "search":
             # search for a song in the library
             songs = indexlib.search_index(config["library"], args["args"][0])
             MAIN.log(Info(f"Found {len(songs)} songs."))
             MAIN.log(
                 Debug(
-                    f"Songs IDs: {', '.join([str(song[0]) for song in songs]).strip()}"
+                    f"Songs IDs: {', '.join([str(song.id) for song in songs]).strip()}"
                 )
             )
-            for song in songs:
-                print(
-                    f"{song[2]} by {song[3]} {f'({song[4]})' if song[4] not in [None, 'None'] else ''}"
-                )
-
+            print("\n".join([str(song) for song in songs]))
         case "c":
             try:
                 pull_session("cmusic_background")
@@ -277,10 +271,10 @@ def main(args: dict):
             if isinstance(song, list):
                 MAIN.log(Info("Multiple songs found, editing all."))
                 for s in song:
-                    indexlib.edit_tags(s[0])
+                    indexlib.edit_tags(s.path)
             else:
                 MAIN.log(Info("Editing song."))
-                indexlib.edit_tags(song[0])
+                indexlib.edit_tags(song.path)
 
         case "info":
             # get the info of a song
@@ -294,14 +288,14 @@ def main(args: dict):
                 print("-" * 30)
                 for s in song:
                     print(
-                        f"Title: {s[2]}\nArtist: {s[3]}\nAlbum: {s[4]}\nGenre: {s[6]}\nYear: {s[7]}"
+                        f"Title: {s.title}\nArtist: {s.artist}\nAlbum: {s.album}\nGenre: {s.genre}\nYear: {s.year}"
                     )
                     print("-" * 30)
             else:
                 MAIN.log(Info("Displaying song info."))
                 print("-" * 30)
                 print(
-                    f"Title: {song[2]}\nArtist: {song[3]}\nAlbum: {song[4]}\nGenre: {song[6]}\nYear: {song[7]}"
+                    f"Title: {song.title}\nArtist: {song.artist}\nAlbum: {song.album}\nGenre: {song.genre}\nYear: {song.year}"
                 )
                 print("-" * 30)
 
@@ -515,7 +509,7 @@ def scan_library(songname):
                 inquirer.List(
                     "song",
                     message=f"Select the song that matches '{songname}'",
-                    choices=[song[2] for song in songs] + ["^^^ All of the above ^^^"],
+                    choices=[song.title for song in songs] + ["^^^ All of the above ^^^"],
                 )
             ]
             answers = inquirer.prompt(questions)
@@ -530,8 +524,8 @@ def scan_library(songname):
             if songname == "^^^ All of the above ^^^":  # TODO: code is kinda crap, fix
                 return [song for song in songs]
             for song in songs:
-                if song[2] == songname:
-                    MAIN.log(Info(f"User selected song '{song[2]}'."))
+                if song.title == songname:
+                    MAIN.log(Info(f"User selected song '{song.title}'."))
                     return song
 
 
@@ -612,7 +606,7 @@ def draw_interface(tags, song_data, looped, shuffle, lyrics: list | None = None)
         current_lyric = indexlib.get_lyric(lyrics, elapsed)
     else:
         current_lyric = None
-    final_playing = f"NOW PLAYING: {song_data[2] if song_data[2] is not None else tags.title if tags.title is not None else song_data[1].split('/')[-1].split('.')[0]} by {song_data[3] if song_data[3] is not None else tags.artist} {f'({song_data[4]})' if song_data[4] not in ['None', None] else f'({tags.album})' if tags.album not in ['None', None] else ''}"
+    final_playing = f"NOW PLAYING: {song_data.title if song_data.title is not None else tags.title if tags.title is not None else song_data.path.split('/')[-1].split('.')[0]} by {song_data.artist if song_data.artist is not None else tags.artist} {f'({song_data.album})' if song_data.album not in ['None', None] else f'({tags.album})' if tags.album not in ['None', None] else ''}"
     double_newline = "\n\n"  # used for compatibility with python 3.11 and under
     new_state = f"\r{final_playing}\n{final_bar}\n<< {state} >> {proper(int(elapsed_minutes))}:{proper(int(elapsed_seconds))} / {proper(int(duration_minutes))}:{proper(int(duration_seconds))} {final_slider} {'🔁' if looped else ''}{'🔀' if shuffle else ''}{f'{double_newline}{current_lyric}' if current_lyric and current_lyric != '' else ''}"
     return "\033c" + new_state
@@ -629,7 +623,7 @@ def play(
         bg = False
     last_printed_state = None
     if song_path is None:
-        MAIN.log(FileNotFoundError(f"Could not find song '{song_data[1]}' in library."))
+        MAIN.log(FileNotFoundError(f"Could not find song '{song_data[2]}' in library."))
         raise FileNotFoundError(f"Could not find song '{song_data[2]}' in library.")
     # play the song
     MAIN.log(Info(f"Playing song '{song_path}'..."))

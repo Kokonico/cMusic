@@ -540,7 +540,7 @@ def create_playlist(name: str, songs: list):
     for song in songs:
         c.execute(
             "INSERT INTO playlist_songs (playlist_id, song_id) VALUES (?, ?)",
-            (playlist_id, song[0]),
+            (playlist_id, song.id),
         )
         conn.commit()
     conn.close()
@@ -577,7 +577,7 @@ def list_playlist(playlist: tuple):
     songs = c.fetchall()
     song_data = []
     for song in songs:
-        c.execute("SELECT * FROM songs WHERE id = ?", (song[1],))
+        c.execute("SELECT * FROM songs WHERE id = ?", (song.id,))
         song_info = c.fetchone()
         song_data.append(song_info)
     conn.close()
@@ -636,7 +636,7 @@ def get_playlist_contents(playlist: tuple):
         song_info = c.fetchone()
         song_data.append(song_info)
     conn.close()
-    return song_data
+    return [Song(*song) for song in song_data]
 
 
 def search_playlist(name: str):
@@ -672,7 +672,7 @@ def delete_song(song):
     """delete a song from the cmusic library"""
     conn = sqlite3.connect(os.path.join(config["library"], "index.db"))
     c = conn.cursor()
-    c.execute("SELECT * FROM songs WHERE id = ?", (song[0],))
+    c.execute("SELECT * FROM songs WHERE id = ?", (song.id,))
     song = Song(*c.fetchone())
     if song is None:
         log.log(Error(f"Song not found."))

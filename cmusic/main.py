@@ -320,8 +320,8 @@ def main(args: dict):
             match args["playlist_command"]:
                 case "create":
                     # create a playlist
-                    playlist_name = args["args"][1]
-                    songs = args["args"][2:]
+                    playlist_name = args["args"][0]
+                    songs = args["args"][1:]
                     # get the songs from the library
                     songs = [scan_library(song) for song in songs]
                     # find any lists in the song list and add them to the song list
@@ -349,11 +349,11 @@ def main(args: dict):
                         print(f"Playlist '{args['args'][0]}' contents:")
                         for song in playlist:
                             print(
-                                f"{song[2]} by {song[3]} {f'({song[4]})' if song[4] not in [None, 'None'] else ''}"
+                                f"{song.title} by {song.artist} {f'({song.album})' if song.album not in [None, 'None'] else ''}"
                             )
                             MAIN.log(
                                 Debug(
-                                    f"Song: {song[2]} by {song[3]} {f'({song[4]})' if song[4] not in [None, 'None'] else ''}"
+                                    f"{song.title} by {song.artist} {f'({song.album})' if song.album not in [None, 'None'] else ''}"
                                 )
                             )
                     except IndexError:
@@ -413,7 +413,10 @@ def main(args: dict):
                     try:
                         playlist_name = args["args"][0]
                         playlist = indexlib.search_playlist(playlist_name)
-                        indexlib.delete_playlist(playlist)
+                        if playlist:
+                            indexlib.delete_playlist(playlist)
+                        else:
+                            MAIN.log(Warn(f"Playlist '{playlist_name}' not found."))
                     except IndexError:
                         MAIN.log(Warn("Playlist name must be provided."))
                         print("Playlist name must be provided.")

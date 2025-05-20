@@ -3,4 +3,4 @@ pygame~=2.5.2
 ObjLog~=2.1.5
 tinytag~=1.10.1
 mutagen~=1.47.0
-setuptools~=71.0.4
+setuptools~=80.7.1

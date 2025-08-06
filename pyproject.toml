@@ -9,10 +9,11 @@ scripts = {"cmusic" = "cmusic.cmusic:main"}
 [tool.poetry.dependencies]
 python = "^3.12"
 objlog = "^2.1.5"
-pygame = "^2.5.2"
-tinytag = "^1.10.1"
+pygame = "^2.6.1"
+tinytag = "^2.1.1"
 mutagen = "^1.47.0"
 inquirer = "^3.2.4"
+setuptools = "=80.8.0"
 
 [build-system]
 requires = ["poetry-core"]

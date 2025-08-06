@@ -117,7 +117,7 @@ def main(args: dict):
                     print(f"Playlist '{args['args'][0]}' is empty.")
                     exit(1)
                 MAIN.log(Info(f"Playlist '{args['args'][0]}' found, playing songs."))
-                args["args"] = [song[2] for song in songs]
+                args["args"] = [song.title for song in songs]
 
             # convert the song names to paths and data (tuple)
             songs = [scan_library(song) for song in args["args"] if song is not None]
@@ -394,15 +394,15 @@ def main(args: dict):
                                 songs += song
                                 songs.remove(song)
                         # remove any None values from the list
-                        songs = [tuple(song) for song in songs if song is not None]
-                        if songs == []:
+                        songs = [song for song in songs if song is not None]
+                        if not songs:
                             MAIN.log(Warn("No songs found to add."))
                             print("No songs found to add.")
                             return
                         playlist = indexlib.search_playlist(playlist_name)
                         for song in songs:
                             indexlib.add_to_playlist(playlist, song)
-                            print(f"added {song[2]} to {playlist_name}")
+                            print(f"added {song.title} to {playlist_name}")
                     except IndexError:
                         MAIN.log(Warn("Playlist and song name must be provided."))
                         print("Playlist and song name must be provided.")

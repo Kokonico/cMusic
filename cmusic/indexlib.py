@@ -87,7 +87,7 @@ def song_from_id(songid: int):
     c.execute("SELECT * FROM songs WHERE id = ?", (songid,))
     song = c.fetchone()
     # convert to Song object
-    song = Song(song[0], song[1], song[2], song[3], song[4], song[5], song[6])
+    song = Song(song[0], song[1], song[2], song[3], song[4], song[5], song[6], song[7])
     conn.close()
     return song
 
@@ -407,7 +407,7 @@ def reformat():
         SET path = ?
         WHERE id = ?
         """,
-            (new_path, song[0]),
+            (new_path, song.path),
         )
         conn.commit()
         None_to_null(song.id)

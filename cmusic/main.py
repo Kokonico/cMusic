@@ -365,19 +365,18 @@ def main(args: dict):
                             print(playlist[1])
                             MAIN.log(Debug(playlist))
                 case "remove":
-                    # remove a song from a playlist
+                    # remove a song(s) from a playlist
                     try:
                         playlist_name = args["args"][0]
-                        song_name = args["args"][1]
                         playlist = indexlib.search_playlist(playlist_name)
-                        songs = [scan_library(song_name) for song in args["args"][2:]]
+                        songs = [scan_library(song) for song in args["args"][1:]]
                         # add any lists to the song list
                         for song in songs:
                             if isinstance(song, list):
                                 songs += song
                                 songs.remove(song)
                         # remove any None values from the list
-                        songs = [tuple(song) for song in songs if song is not None]
+                        songs = [song for song in songs if song is not None]
                         for song in songs:
                             indexlib.remove_from_playlist(playlist, song)
                     except IndexError:
@@ -460,7 +459,7 @@ def main(args: dict):
                 print("Are you sure you want to delete the following songs?")
                 for s in song:
                     print(
-                        f"{s[2]} by {s[3]} {f'({s[4]})' if s[4] not in [None, 'None'] else ''}"
+                        f"{s.title} by {s.artist} {f'({s.album})' if s.album not in [None, 'None'] else ''}"
                     )
                 are_you_sure = input("y/n: ")
                 if are_you_sure.lower() == "y":
@@ -472,7 +471,7 @@ def main(args: dict):
                     return
             else:
                 print(
-                    f"Are you sure you want to delete '{song[2]} by {song[3]} {f'({song[4]})' if song[4] not in [None, 'None'] else ''}'?"
+                    f"Are you sure you want to delete '{song.title} by {song.artist} {f'({song.album})' if song.album not in [None, 'None'] else ''}'?"
                 )
                 are_you_sure = input("y/n: ")
                 if are_you_sure.lower() == "y":

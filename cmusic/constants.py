@@ -66,7 +66,7 @@ class Song:
         }
 
     def __str__(self):
-        return f"{self.title} by {self.artist} {f'({self.album})' if self.album else ''}"
+        return f"{self.title} {f'by {self.artist}' if self.artist is not None else ''} {f'({self.album})' if self.album is not None else ''}"
 
 
 # EXECUTION PAST THIS POINT

@@ -277,6 +277,10 @@ def main(args: dict):
                 indexlib.edit_tags(song.path)
 
         case "info":
+            if len(args["args"]) == 0:
+                print("Please provide a song name to get info about.")
+                MAIN.log(Warn("No song name provided."))
+                return
             # get the info of a song
             song = scan_library(args["args"][0])
             if song is None:
@@ -429,7 +433,7 @@ def main(args: dict):
                 if isinstance(song, list):
                     songs += song
                     songs.remove(song)
-            songs = [list(song) for song in songs]
+            songs = [song.export() for song in songs]
             with open(QUEUE_FILE, "r") as f:
                 current = json.load(f)
             with open(QUEUE_FILE, "w") as f:
@@ -439,7 +443,7 @@ def main(args: dict):
             MAIN.log(Info(f"Queued {len(songs)} songs."))
             for song in songs:
                 print(
-                    f"Queued {song[2]} by {song[3]} {f'({song[4]})' if song[4] not in [None, 'None'] else ''}"
+                    f"Queued {song["title"]} by {song["artist"]} {f'({song["album"]})' if song["album"] not in [None, 'None'] else ''}"
                 )
 
 

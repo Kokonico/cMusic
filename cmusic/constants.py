@@ -29,6 +29,7 @@ PLAYBACK_CONFIG_FILE = os.path.join(CMUSIC_DIR, "playback.json")
 PLAYBACK_CONFIG = {
     "loop": False,
     "shuffle": False,
+    "fade_time": 3.0
 }
 
 # default config
@@ -117,6 +118,15 @@ if not os.path.exists(PLAYBACK_CONFIG_FILE):
     with open(PLAYBACK_CONFIG_FILE, "w") as f:
         f.write(json.dumps(PLAYBACK_CONFIG, indent=4))
     MAIN.log(Info("Created playback config file"))
+else:
+    # assure all fields are present
+    playback_config = json.load(open(PLAYBACK_CONFIG_FILE))
+    for key in PLAYBACK_CONFIG:
+        if key not in playback_config:
+            playback_config[key] = PLAYBACK_CONFIG[key]
+            MAIN.log(Info(f"Added missing field to playback config: {key}"))
+    with open(PLAYBACK_CONFIG_FILE, "w") as f:
+        f.write(json.dumps(playback_config, indent=4))
 
 # queue file
 

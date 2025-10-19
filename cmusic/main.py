@@ -18,7 +18,7 @@ import subprocess
 # local package imports
 from . import indexlib
 from . import bg_threads
-from .constants import MAIN, config, CONFIG_FILE, LIBRARY, QUEUE_FILE, PLAYBACK_CONFIG_FILE, Song
+from .constants import MAIN, config, playback_config, CONFIG_FILE, LIBRARY, QUEUE_FILE, PLAYBACK_CONFIG_FILE, Song
 
 import math
 import random
@@ -70,6 +70,16 @@ class PlayingSong:
         if self.mixer_channel is None:
             raise ValueError("No mixer channel available for PlayingSong instance.")
         return self.mixer_channel.get_busy()
+
+    def time_left(self) -> int:
+        """Get the time left in the song (in milliseconds)"""
+        if self.song is None:
+            raise ValueError("No song set for PlayingSong instance.")
+        if self.mixer_channel is None:
+            raise ValueError("No mixer channel available for PlayingSong instance.")
+        sound = pygame.mixer.Sound(self.song.path)
+        elapsed = sound.get_length() * 1000 - self.mixer_channel.get_queue().get_length() * 1000
+        return max(0, int(sound.get_length() * 1000 - elapsed))
 
 
 def main(args: dict):
@@ -186,23 +196,18 @@ def main(args: dict):
                     MAIN.log(Debug(songs))
                     json.dump(exportable_songs, f)
                 try:
-                    # TODO: make more readable
-                    conf_playback = {
-                        "loop": args["loop"],
-                        "shuffle": args["shuffle"],
-                    }
-                    # write the playback config to the file
-                    with open(PLAYBACK_CONFIG_FILE, "w") as f:
-                        f.write(json.dumps(conf_playback, indent=4))
                     while True:  # we want to loop through the songs indefinitely (unless loop is set to False)
                         with open(QUEUE_FILE) as f:
                             songs = json.load(f)
                             songs = [Song(song["id"], song["path"], song["title"], song["artist"], song["album"], song["duration"], song["genre"], song["year"]) for song in songs]
                             MAIN.log(Debug(songs))
                         for song in songs:
-                            play(song.path, song, conf_playback["loop"], conf_playback["shuffle"], config)
-                            conf_playback = json.load(open(PLAYBACK_CONFIG_FILE))  # reload the playback config
-                            if not conf_playback["loop"]:
+                            if not os.path.exists(song.path):
+                                MAIN.log(Warn(f"Song '{song.title}' not found, skipping."))
+                                print(f"Song '{song.title}' not found, skipping.")
+                                continue
+                            play(song, playback_config["loop"], playback_config["shuffle"])
+                            if not playback_config["loop"]:
                                 songs.remove(song)
                             with open(QUEUE_FILE) as f:
                                 new = json.load(f)
@@ -210,13 +215,13 @@ def main(args: dict):
                                     if stored == song.export():
                                         new.remove(stored)
                                         # if loop is on, add the song back to the queue at the end
-                                        if conf_playback["loop"]:
+                                        if playback_config["loop"]:
                                             new.append(song.export())
                                 with open(QUEUE_FILE, "w") as f:
                                     json.dump(new, f)
                                 break
 
-                        if not conf_playback["loop"] and len(new) <= 0:
+                        if not playback_config["loop"] and len(new) <= 0:
                             break
                 except (
                         KeyboardInterrupt
@@ -660,38 +665,36 @@ def draw_interface(tags, song_data, looped, shuffle, lyrics: list | None = None)
 
 
 def play(
-        song_path, song_data, looped, shuffle, config
-):  # will error if config is not passed, idk why
+        song, looped, shuffle
+):
     """play a song."""
+    global config
     # get the song path
     if "TMUX" in os.environ:
         bg = True
     else:
         bg = False
     last_printed_state = None
-    if song_path is None:
-        MAIN.log(FileNotFoundError(f"Could not find song '{song_data[2]}' in library."))
-        raise FileNotFoundError(f"Could not find song '{song_data[2]}' in library.")
     # play the song
-    MAIN.log(Info(f"Playing song '{song_path}'..."))
-    tags = TinyTag.get(song_path)
+    MAIN.log(Info(f"Playing song '{song.path}'..."))
+    tags = TinyTag.get(song.path)
     pygame.mixer.init()
-    pygame.mixer.music.load(song_path)
+    pygame.mixer.music.load(song.path)
     pygame.mixer.music.set_volume(config["volume"] / 100)
     pygame.mixer.music.play()
     key_thread = bg_threads.KeyHandler(bg)
-    lyrics = indexlib.grab_sylt_lyrics(song_data)
+    lyrics = indexlib.grab_sylt_lyrics(song)
     try:
         # start the key press listener
         key_thread.start()
-        while pygame.mixer.music.get_pos() != -1:
+        while pygame.mixer.music.get_busy():
             # grab playback info
             with open(PLAYBACK_CONFIG_FILE) as f:
                 playback_config = json.load(f)
                 looped = playback_config["loop"]
                 shuffle = playback_config["shuffle"]
             # draw the interface
-            interface_frame = draw_interface(tags, song_data, looped, shuffle, lyrics)
+            interface_frame = draw_interface(tags, song, looped, shuffle, lyrics)
             if interface_frame != last_printed_state:
                 print(interface_frame)
                 last_printed_state = interface_frame

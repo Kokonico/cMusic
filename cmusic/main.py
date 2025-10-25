@@ -30,58 +30,6 @@ import inquirer
 import pygame
 from tinytag import TinyTag
 
-class PlayingSong:
-    """Class representing a song"""
-    # note: each song instance is played in its own mixer channel, so multiple songs can be played at once (for crossfading, etc)
-    playing: bool = False
-    mixer_volume: int = 100
-    song: Song | None = None
-    mixer_channel: pygame.mixer.Channel | None = None
-
-    def __init__(self, song: Song | None = None):
-        self.song = song
-        self.mixer_channel = pygame.mixer.find_channel()
-
-    def set_config(self):
-        """Set the song's config (volume, etc.)"""
-        if self.mixer_channel is not None:
-            self.mixer_channel.set_volume(self.mixer_volume / 100)
-
-    def play(self, fade_in: int = 0):
-        """Play the song"""
-        if self.song is None:
-            raise ValueError("No song set for PlayingSong instance.")
-        if self.mixer_channel is None:
-            raise ValueError("No mixer channel available for PlayingSong instance.")
-        sound = pygame.mixer.Sound(self.song.path)
-        self.mixer_channel.play(sound, fade_ms=fade_in)
-        self.playing = True
-        self.set_config()
-
-    def stop(self, fade_out: int = 0):
-        """Stop the song"""
-        if self.mixer_channel is None:
-            raise ValueError("No mixer channel available for PlayingSong instance.")
-        self.mixer_channel.fadeout(fade_out)
-        self.playing = False
-
-    def is_playing(self) -> bool:
-        """Check if the song is playing"""
-        if self.mixer_channel is None:
-            raise ValueError("No mixer channel available for PlayingSong instance.")
-        return self.mixer_channel.get_busy()
-
-    def time_left(self) -> int:
-        """Get the time left in the song (in milliseconds)"""
-        if self.song is None:
-            raise ValueError("No song set for PlayingSong instance.")
-        if self.mixer_channel is None:
-            raise ValueError("No mixer channel available for PlayingSong instance.")
-        sound = pygame.mixer.Sound(self.song.path)
-        elapsed = sound.get_length() * 1000 - self.mixer_channel.get_queue().get_length() * 1000
-        return max(0, int(sound.get_length() * 1000 - elapsed))
-
-
 def main(args: dict):
     """Main function for cMusic."""
 

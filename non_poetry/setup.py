@@ -7,6 +7,6 @@ setup(
     author='Kokonico',
     author_email='kokonico@duck.com',
     packages=['cmusic'],
-    install_requires=['objlog', 'pygame', 'tinytag', 'mutagen', 'inquirer'],
+    install_requires=['objlog', 'pygame-ce', 'tinytag', 'mutagen', 'inquirer'],
     scripts=["cmusic/cmusic.py"]
 )

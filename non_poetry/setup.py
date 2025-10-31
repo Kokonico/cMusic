@@ -2,7 +2,7 @@ from setuptools import setup
 
 setup(
     name='cmusic',
-    version='1.2.0',
+    version='2.0.0',
     description='the CLI music player',
     author='Kokonico',
     author_email='kokonico@duck.com',

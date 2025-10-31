@@ -35,6 +35,7 @@ class KeyHandler(threading.Thread):
         super(KeyHandler, self).__init__()
         self.stop_flag = threading.Event()
         self.is_bg = is_bg
+        self.song_paused = False
         self.MAIN = LogNode("KeyHandler", log_file=LOG_FILE)
         self.MAIN.log(
             Info(
@@ -68,9 +69,11 @@ class KeyHandler(threading.Thread):
                             if pygame.mixer.music.get_busy():
                                 self.MAIN.log(Info("Pausing the song."))
                                 pygame.mixer.music.pause()
+                                self.song_paused = True
                             else:
                                 self.MAIN.log(Info("Unpausing the song."))
                                 pygame.mixer.music.unpause()
+                                self.song_paused = False
                         case "e":
                             # detach tmux session (this process is within it)
                             self.MAIN.log(Info("Detaching tmux session."))

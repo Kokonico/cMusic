@@ -635,7 +635,7 @@ def play(
     try:
         # start the key press listener
         key_thread.start()
-        while pygame.mixer.music.get_busy() or not bg or key_thread.is_alive():
+        while pygame.mixer.music.get_busy() or key_thread.song_paused:
             # grab playback info
             with open(PLAYBACK_CONFIG_FILE) as f:
                 playback_config = json.load(f)

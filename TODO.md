@@ -13,8 +13,8 @@
 - [ ] Equalizer support (change through config file)
 - [ ] ~~Audio Normalization~~ **SCHEDULED FOR LATER RELEASE**
 - [ ] ~~Multi-language support~~ **SCHEDULED FOR LATER RELEASE**
-- [ ] ~~Discord Rich Presence~~ **SCHEDULED FOR LATER RELEASE**
+- [ ] Discord Rich Presence
 - [ ] ~~improved search (sql `LIKE` is not a great search method)~~ **SCHEDULED FOR LATER RELEASE**
 - [x] ~~Lyrics support _(line by line maybe?)_~~ **COMPLETED**
 - [ ] Easier Lyric Attachment (currently only possible through manual editing of the song file)
-- [ ] crossfade between songs (song transitions)
+- [ ] ~~crossfade between songs (song transitions)~~ **SCHEDULED FOR LATER RELEASE**

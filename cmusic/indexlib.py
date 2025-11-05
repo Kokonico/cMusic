@@ -329,7 +329,7 @@ def index(song_file):
     album = data[2]
     year = data[3]
     genre = data[4]
-    song_path = os.path.join(config["library"], safe(song_name) + "." + song_file.split(".")[-1])
+    song_path = os.path.join(config["library"], safe(song_name) + "." + os.path.splitext(song_file)[1])
     # copy the file to the library
     log.log(Info(f"Copying '{song_file}' to library..."))
     with open(song_file, "rb") as f:

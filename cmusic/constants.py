@@ -36,7 +36,7 @@ PLAYBACK_CONFIG = {
 # this is the default config that is written to the config file if it doesn't exist
 
 DEFAULT_CONFIG = {
-    "library": os.path.join(os.path.expanduser("~"), "cMusic Library"),
+    "library": os.path.join(os.path.expanduser("~"), "Music", "cMusic Library"),
     "volume": 100,
 }
 

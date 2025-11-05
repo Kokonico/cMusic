@@ -73,8 +73,8 @@ def main():
             print("Unknown OS, here be dragons.")
 
     # assure tmux is installed
-    tmux_check = subprocess.run(["tmux", "-V"], stdout=subprocess.PIPE, stderr=subprocess.PIPE)
-    if tmux_check.returncode != 0:
+    tmux_check = subprocess.run(['tmux', '-V'], stdout=subprocess.PIPE, stderr=subprocess.PIPE).returncode
+    if tmux_check != 0:
         # tmux isn't installed
         BOOTLOADER.log(Warn("tmux is not installed."))
         specific_os = (

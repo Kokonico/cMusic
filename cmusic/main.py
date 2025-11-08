@@ -265,10 +265,10 @@ def main(args: dict):
             if isinstance(song, list):
                 MAIN.log(Info("Multiple songs found, editing all."))
                 for s in song:
-                    indexlib.edit_tags(s.path)
+                    indexlib.edit_tags(s.id)
             else:
                 MAIN.log(Info("Editing song."))
-                indexlib.edit_tags(song.path)
+                indexlib.edit_tags(song.id)
 
         case "info":
             if len(args["args"]) == 0:

@@ -2,8 +2,6 @@
 
 __version__ = "2.0.0"
 
-from .indexlib import index
-
 extra = "Stable"
 
 # VIOLENCE /// CLIMAX
@@ -437,7 +435,7 @@ def main(args: dict):
             MAIN.log(Info(f"Queued {len(songs)} songs."))
             for song in songs:
                 print(
-                    f"Queued {song["title"]} by {song["artist"]} {f'({song["album"]})' if song["album"] not in [None, 'None'] else ''}"
+                    f"Queued {song['title']} by {song['artist']} {f'({song['album']})' if song['album'] not in [None, 'None'] else ''}"
                 )
 
 
